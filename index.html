@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StellarVail - Music Sharing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 StellarVail</h1>
+            <p class="subtitle">Share your music with friends</p>
+        </header>
+
+        <div class="player-section">
+            <div id="now-playing">
+                <h2>Now Playing</h2>
+                <div id="current-song-info">
+                    <p class="song-title">Select a song to play</p>
+                    <p class="song-artist"></p>
+                </div>
+                <audio id="audio-player" controls></audio>
+            </div>
+        </div>
+
+        <div class="songs-container" id="songs-container">
+            <!-- Songs will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

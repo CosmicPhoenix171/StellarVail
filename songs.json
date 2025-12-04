@@ -1,0 +1,23 @@
+[
+    {
+        "id": "song1",
+        "title": "Song Title 1",
+        "artist": "Your Name",
+        "filename": "song1.wav",
+        "description": "Description of your first song"
+    },
+    {
+        "id": "song2",
+        "title": "Song Title 2",
+        "artist": "Your Name",
+        "filename": "song2.wav",
+        "description": "Description of your second song"
+    },
+    {
+        "id": "song3",
+        "title": "Song Title 3",
+        "artist": "Your Name",
+        "filename": "song3.wav",
+        "description": "Description of your third song"
+    }
+]
