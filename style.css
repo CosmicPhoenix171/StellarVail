@@ -250,6 +250,31 @@ header h1 {
     border-color: rgba(167, 139, 250, 0.6);
 }
 
+.song-card.in-now-playing {
+    box-shadow: 0 15px 40px rgba(120, 0, 255, 0.6);
+    border-color: rgba(167, 139, 250, 0.8);
+    transform: none;
+    width: 100%;
+    margin: 0;
+}
+
+.song-card.placeholder-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    background: rgba(15, 10, 40, 0.4);
+    border: 2px dashed rgba(167, 139, 250, 0.4);
+    color: #818cf8;
+    font-style: italic;
+    text-align: center;
+}
+
+.placeholder-text {
+    margin: 0;
+    font-size: 0.95em;
+}
+
 .song-header {
     cursor: pointer;
     margin-bottom: 15px;

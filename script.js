@@ -2,8 +2,8 @@
 let currentSongId = null;
 let songsData = [];
 let shuffleMode = false;
-let nowPlayingRatingRef = null;
-let nowPlayingListenRef = null;
+let activeCardElement = null;
+let activeCardPlaceholder = null;
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -42,6 +42,8 @@ function renderSongs() {
 function createSongCard(song) {
 	const card = document.createElement('div');
 	card.className = 'song-card';
+	card.id = `card-${song.id}`;
+	card.dataset.songId = song.id;
 	card.innerHTML = `
 		<div class="song-header" onclick="playSong('${song.id}')">
 			<h3>${song.title}</h3>
@@ -112,59 +114,44 @@ function updateNowPlayingCard(song) {
 	const card = document.getElementById('now-playing-card');
 	if (!card) return;
 
-	card.innerHTML = `
-		<div class="now-playing-content">
-			<div class="now-playing-info">
-				<h3 class="now-playing-title">${song.title}</h3>
-				<p class="now-playing-artist">${song.artist || 'Unknown Artist'}</p>
-				${song.description ? `<p class="now-playing-description">${song.description}</p>` : ''}
-			</div>
-			<div class="now-playing-stats">
-				<span id="np-avg-rating-${song.id}">⭐ 0.0</span>
-				<span id="np-rating-count-${song.id}">(0)</span>
-				<span id="np-listen-count-${song.id}">👂 0</span>
-			</div>
-		</div>
-	`;
-
-	loadNowPlayingStats(song.id);
+	moveCardToPlayer(song.id);
 }
 
-function loadNowPlayingStats(songId) {
-	if (typeof database === 'undefined') return;
+function moveCardToPlayer(songId) {
+	const nowPlayingContainer = document.getElementById('now-playing-card');
+	if (!nowPlayingContainer) return;
 
-	if (nowPlayingRatingRef) {
-		nowPlayingRatingRef.off();
+	// If the requested song is already in the player, nothing to do
+	if (activeCardElement && activeCardElement.dataset.songId === songId) {
+		return;
 	}
-	if (nowPlayingListenRef) {
-		nowPlayingListenRef.off();
+
+	// Restore previously active card back to the list
+	if (activeCardElement && activeCardPlaceholder) {
+		activeCardElement.classList.remove('in-now-playing');
+		activeCardPlaceholder.replaceWith(activeCardElement);
+		activeCardElement = null;
+		activeCardPlaceholder = null;
 	}
 
-	nowPlayingRatingRef = database.ref(`songs/${songId}/ratings`);
-	nowPlayingListenRef = database.ref(`songs/${songId}/listens`);
+	const card = document.getElementById(`card-${songId}`);
+	if (!card) {
+		nowPlayingContainer.innerHTML = '<p class="no-song-playing">Select a song to play</p>';
+		return;
+	}
 
-	nowPlayingRatingRef.on('value', (snapshot) => {
-		const ratings = snapshot.val();
-		let sum = 0;
-		let count = 0;
-		if (ratings) {
-			Object.values(ratings).forEach((rating) => {
-				sum += rating.rating;
-				count += 1;
-			});
-		}
-		const average = count > 0 ? (sum / count).toFixed(1) : '0.0';
-		const avgEl = document.getElementById(`np-avg-rating-${songId}`);
-		const countEl = document.getElementById(`np-rating-count-${songId}`);
-		if (avgEl) avgEl.textContent = `⭐ ${average}`;
-		if (countEl) countEl.textContent = `(${count})`;
-	});
+	const placeholder = document.createElement('div');
+	placeholder.className = 'song-card placeholder-card';
+	placeholder.innerHTML = '<p class="placeholder-text">Playing in the Now Playing panel above</p>';
 
-	nowPlayingListenRef.on('value', (snapshot) => {
-		const count = snapshot.val() || 0;
-		const listenEl = document.getElementById(`np-listen-count-${songId}`);
-		if (listenEl) listenEl.textContent = `👂 ${count}`;
-	});
+	card.parentNode.replaceChild(placeholder, card);
+
+	card.classList.add('in-now-playing');
+	nowPlayingContainer.innerHTML = '';
+	nowPlayingContainer.appendChild(card);
+
+	activeCardElement = card;
+	activeCardPlaceholder = placeholder;
 }
 
 function playNextSong() {
