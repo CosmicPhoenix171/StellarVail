@@ -213,6 +213,7 @@ header h1 {
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
 }
 
 .avg-rating {
@@ -225,6 +226,13 @@ header h1 {
 .rating-count {
     font-size: 0.9em;
     color: #a5b4fc;
+}
+
+.listen-count {
+    font-size: 0.9em;
+    color: #60a5fa;
+    margin-left: auto;
+    font-weight: 500;
 }
 
 .rating-stars {

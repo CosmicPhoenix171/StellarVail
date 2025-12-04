@@ -28,8 +28,9 @@ function renderSongs() {
         const songCard = createSongCard(song);
         songsContainer.appendChild(songCard);
         
-        // Load rating and feedback data
+        // Load rating, feedback, and listen data
         loadRatingData(song.id);
+        loadListenCount(song.id);
         loadFeedback(song.id);
     });
 }
@@ -53,6 +54,7 @@ function createSongCard(song) {
             <div class="rating-display">
                 <span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
                 <span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
+                <span class="listen-count" id="listen-count-${song.id}">👂 0 listens</span>
             </div>
             <div class="rating-stars" id="rating-stars-${song.id}">
                 ${[1, 2, 3, 4, 5].map(i => `<span class="star" data-rating="${i}" onclick="rateSong('${song.id}', ${i})">★</span>`).join('')}
@@ -85,6 +87,9 @@ function playSong(songId) {
     audioPlayer.src = `music/${song.filename}`;
     audioPlayer.play();
     
+    // Increment listen count in Firebase
+    incrementListenCount(songId);
+    
     // Update now playing display
     currentSongTitle.textContent = song.title;
     currentSongArtist.textContent = song.artist || 'Unknown Artist';
@@ -111,6 +116,29 @@ audioPlayer.addEventListener('ended', () => {
         btn.innerHTML = '▶ Play';
     });
 });
+
+// ===== LISTEN COUNT TRACKING =====
+
+// Load listen count from Firebase
+function loadListenCount(songId) {
+    const listensRef = database.ref(`songs/${songId}/listens`);
+    
+    listensRef.on('value', (snapshot) => {
+        const count = snapshot.val() || 0;
+        const listenElement = document.getElementById(`listen-count-${songId}`);
+        if (listenElement) {
+            listenElement.textContent = `👂 ${count} listen${count !== 1 ? 's' : ''}`;
+        }
+    });
+}
+
+// Increment listen count
+function incrementListenCount(songId) {
+    const listensRef = database.ref(`songs/${songId}/listens`);
+    listensRef.transaction((currentCount) => {
+        return (currentCount || 0) + 1;
+    });
+}
 
 // ===== RATING SYSTEM =====
 
