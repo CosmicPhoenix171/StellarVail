@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -15,10 +15,19 @@
 
         <div class="player-section">
             <div id="now-playing">
-                <h2>Now Playing</h2>
-                <div id="current-song-info">
-                    <p class="song-title">Select a song to play</p>
-                    <p class="song-artist"></p>
+                <div class="player-header">
+                    <h2>Now Playing</h2>
+                    <div class="player-controls">
+                        <button id="random-btn" class="random-btn" onclick="playRandomSong()" title="Play a random song">
+                            🎲 Surprise Me
+                        </button>
+                        <button id="shuffle-btn" class="shuffle-btn" onclick="toggleShuffle()" title="Toggle shuffle mode">
+                            🔀 Shuffle: OFF
+                        </button>
+                    </div>
+                </div>
+                <div id="now-playing-card">
+                    <p class="no-song-playing">Select a song to play</p>
                 </div>
                 <audio id="audio-player" controls></audio>
             </div>
