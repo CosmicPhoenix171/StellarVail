@@ -229,6 +229,51 @@ body::before {
     box-shadow: 0 18px 35px rgba(154, 123, 255, 0.35);
 }
 
+.song-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.summary-info {
+    cursor: pointer;
+}
+
+.summary-info h3 {
+    font-size: 1.1em;
+    letter-spacing: 0.5px;
+}
+
+.summary-metrics {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-rating {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    align-items: baseline;
+}
+
+.avg-rating {
+    font-size: 1.2em;
+    color: var(--accent);
+}
+
+.rating-count {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.listen-count {
+    font-size: 0.85em;
+    color: var(--accent-2);
+}
+
 .song-card.placeholder-card {
     border: 1px dashed rgba(255, 255, 255, 0.25);
     align-items: center;
@@ -238,15 +283,32 @@ body::before {
     text-align: center;
 }
 
-.song-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding-bottom: 12px;
-    cursor: pointer;
-}
-
-.song-card h3 { font-size: 1.2em; }
 .song-card .artist { color: var(--text-muted); font-size: 0.95em; }
 .song-card .description { font-size: 0.85em; color: rgba(255,255,255,0.7); }
+
+.detail-section {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-direction: column;
+    gap: 16px;
+}
+
+.song-card.in-now-playing .detail-section {
+    display: flex;
+}
+
+.song-card.in-now-playing .song-summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+}
+
+.detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
 
 .play-button {
     border: none;
@@ -267,16 +329,6 @@ body::before {
     padding: 14px;
     background: rgba(0, 0, 0, 0.2);
 }
-
-.rating-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
-
-.avg-rating { font-size: 1.3em; color: var(--accent); }
-.listen-count { margin-left: auto; color: var(--accent-2); font-size: 0.9em; }
 
 .rating-stars { display: flex; gap: 4px; }
 .star { font-size: 1.5em; color: rgba(255,255,255,0.2); cursor: pointer; }

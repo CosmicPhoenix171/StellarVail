@@ -45,40 +45,46 @@ function createSongCard(song) {
 	card.id = `card-${song.id}`;
 	card.dataset.songId = song.id;
 	card.innerHTML = `
-		<div class="song-header" onclick="playSong('${song.id}')">
-			<h3>${song.title}</h3>
-			<p class="artist">${song.artist || 'Unknown Artist'}</p>
-			${song.description ? `<p class="description">${song.description}</p>` : ''}
+		<div class="song-summary">
+			<div class="summary-info" onclick="playSong('${song.id}')">
+				<h3>${song.title}</h3>
+			</div>
+			<div class="summary-metrics">
+				<div class="summary-rating">
+					<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
+					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
+				</div>
+				<span class="listen-count" id="listen-count-${song.id}">👂 0 listens</span>
+			</div>
 		</div>
 		<button class="play-button" onclick="playSong('${song.id}')" data-song-id="${song.id}">
 			▶ Play
 		</button>
-
-		<div class="rating-section">
-			<div class="rating-display">
-				<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
-				<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
-				<span class="listen-count" id="listen-count-${song.id}">👂 0 listens</span>
+		<div class="detail-section">
+			<div class="detail-header">
+				<p class="artist">${song.artist || 'Unknown Artist'}</p>
+				${song.description ? `<p class="description">${song.description}</p>` : ''}
 			</div>
-			<div class="rating-stars" id="rating-stars-${song.id}">
-				${[1, 2, 3, 4, 5].map((i) => `<span class="star" data-rating="${i}" onclick="rateSong('${song.id}', ${i})">★</span>`).join('')}
-			</div>
-			<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
-		</div>
-
-		<div class="feedback-section">
-			<h4>Comments</h4>
-			<div class="feedback-form">
-				<input type="text" id="feedback-name-${song.id}" placeholder="Your name (optional, default: Anonymous)" maxlength="50">
-				<div class="textarea-with-timestamp">
-					<textarea id="feedback-text-${song.id}" placeholder="Leave your feedback..." maxlength="500"></textarea>
-					<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱️ Add Time</button>
+			<div class="rating-section">
+				<div class="rating-stars" id="rating-stars-${song.id}">
+					${[1, 2, 3, 4, 5].map((i) => `<span class="star" data-rating="${i}" onclick="rateSong('${song.id}', ${i})">★</span>`).join('')}
 				</div>
-				<input type="hidden" id="feedback-timestamp-${song.id}" value="">
-				<button onclick="submitFeedback('${song.id}')">Post Comment</button>
+				<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
 			</div>
-			<div class="feedback-list" id="feedback-list-${song.id}">
-				<p class="no-feedback">No comments yet. Be the first!</p>
+			<div class="feedback-section">
+				<h4>Comments</h4>
+				<div class="feedback-form">
+					<input type="text" id="feedback-name-${song.id}" placeholder="Your name (optional, default: Anonymous)" maxlength="50">
+					<div class="textarea-with-timestamp">
+						<textarea id="feedback-text-${song.id}" placeholder="Leave your feedback..." maxlength="500"></textarea>
+						<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱️ Add Time</button>
+					</div>
+					<input type="hidden" id="feedback-timestamp-${song.id}" value="">
+					<button onclick="submitFeedback('${song.id}')">Post Comment</button>
+				</div>
+				<div class="feedback-list" id="feedback-list-${song.id}">
+					<p class="no-feedback">No comments yet. Be the first!</p>
+				</div>
 			</div>
 		</div>
 	`;
@@ -142,7 +148,7 @@ function moveCardToPlayer(songId) {
 
 	const placeholder = document.createElement('div');
 	placeholder.className = 'song-card placeholder-card';
-	placeholder.innerHTML = '<p class="placeholder-text">Playing in the Now Playing panel above</p>';
+	placeholder.innerHTML = '<p class="placeholder-text">Playing in the Now Playing panel</p>';
 
 	card.parentNode.replaceChild(placeholder, card);
 
