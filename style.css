@@ -314,6 +314,38 @@ header h1 {
     min-height: 80px;
 }
 
+.textarea-with-timestamp {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.textarea-with-timestamp textarea {
+    margin-bottom: 0;
+    padding-right: 100px;
+}
+
+.timestamp-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background: rgba(124, 58, 237, 0.3);
+    color: #a78bfa;
+    border: 1px solid rgba(167, 139, 250, 0.5);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: 500;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.timestamp-btn:hover {
+    background: rgba(124, 58, 237, 0.5);
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
+    transform: scale(1.05);
+}
+
 .feedback-form button {
     background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
     color: white;
@@ -375,6 +407,9 @@ header h1 {
 .feedback-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     margin-bottom: 8px;
     font-size: 0.85em;
 }
@@ -384,8 +419,28 @@ header h1 {
     color: #a78bfa;
 }
 
+.timestamp-badge {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.3) 0%, rgba(124, 58, 237, 0.3) 100%);
+    color: #60a5fa;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(96, 165, 250, 0.4);
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.timestamp-badge:hover {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.5) 0%, rgba(124, 58, 237, 0.5) 100%);
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+    transform: scale(1.05);
+}
+
 .feedback-time {
     color: #818cf8;
+    margin-left: auto;
 }
 
 .feedback-text {
