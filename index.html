@@ -7,35 +7,61 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>STELLAR VAIL</h1>
-            <p class="subtitle">Journey Through Sound</p>
-        </header>
-
-        <div class="player-section">
-            <div id="now-playing">
-                <div class="player-header">
-                    <h2>Now Playing</h2>
-                    <div class="player-controls">
-                        <button id="random-btn" class="random-btn" onclick="playRandomSong()" title="Play a random song">
-                            🎲 Surprise Me
-                        </button>
-                        <button id="shuffle-btn" class="shuffle-btn" onclick="toggleShuffle()" title="Toggle shuffle mode">
-                            🔀 Shuffle: OFF
-                        </button>
-                    </div>
-                </div>
-                <div id="now-playing-card">
-                    <p class="no-song-playing">Select a song to play</p>
-                </div>
-                <audio id="audio-player" controls></audio>
+    <div class="app-shell">
+        <nav class="sidebar">
+            <div class="brand">
+                <h1>Stellar Vail</h1>
+                <p>Journey Through Sound</p>
             </div>
-        </div>
+            <ul class="nav-links">
+                <li class="active">🏠 Home</li>
+                <li>🎵 Library</li>
+                <li>✨ Discover</li>
+                <li>❤️ Favorites</li>
+            </ul>
+        </nav>
 
-        <div class="songs-container" id="songs-container">
-            <!-- Songs will be dynamically loaded here -->
-        </div>
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search songs, artists..." />
+                </div>
+                <div class="user-pill">
+                    <span class="status-dot"></span>
+                    <span>Guest</span>
+                </div>
+            </header>
+
+            <section class="hero">
+                <div>
+                    <h2>Journey Through Sound</h2>
+                    <p>Explore cosmic beats curated for deep focus and exploration.</p>
+                </div>
+                <button class="hero-cta">Start Listening</button>
+            </section>
+
+            <section class="songs-grid" id="songs-container">
+                <!-- Songs will be dynamically loaded here -->
+            </section>
+        </main>
+
+        <aside class="now-playing-panel">
+            <div class="panel-header">
+                <h3>Now Playing</h3>
+                <div class="panel-controls">
+                    <button id="random-btn" onclick="playRandomSong()" title="Surprise me">🎲 Surprise Me</button>
+                    <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">🔀 Shuffle: OFF</button>
+                </div>
+            </div>
+            <div id="now-playing-card" class="now-playing-card">
+                <p class="no-song-playing">Select a song to play</p>
+            </div>
+        </aside>
+
+        <footer class="player-bar">
+            <audio id="audio-player" controls></audio>
+        </footer>
     </div>
 
     <!-- Firebase SDK -->
