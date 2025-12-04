@@ -181,12 +181,12 @@ body::before {
 
 .song-card {
     background: rgba(10, 15, 35, 0.85);
-    border-radius: 20px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 16px;
     border: 1px solid rgba(255, 255, 255, 0.04);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
     transition: transform 0.3s ease, border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -250,7 +250,7 @@ body::before {
     border: 1px dashed rgba(255, 255, 255, 0.25);
     align-items: center;
     justify-content: center;
-    min-height: 140px;
+    min-height: 100px;
     color: var(--text-muted);
     text-align: center;
 }
@@ -260,11 +260,11 @@ body::before {
 
 .detail-section {
     display: none;
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .song-card.in-now-playing .detail-section {
@@ -284,7 +284,7 @@ body::before {
 
 .play-button {
     border: none;
-    padding: 12px;
+    padding: 10px;
     border-radius: 999px;
     background: linear-gradient(120deg, #9a7bff, #58b5ff);
     color: #030815;
@@ -297,8 +297,8 @@ body::before {
 
 .rating-section {
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 12px;
+    padding: 12px;
     background: rgba(0, 0, 0, 0.2);
 }
 
