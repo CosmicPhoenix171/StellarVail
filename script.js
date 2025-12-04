@@ -44,6 +44,14 @@ function createSongCard(song) {
 	card.className = 'song-card';
 	card.id = `card-${song.id}`;
 	card.dataset.songId = song.id;
+
+	const artistValue = (song.artist || '').trim();
+	const descriptionValue = (song.description || '').trim();
+	const artistIsPlaceholder = !artistValue || ['your name', 'artist name'].includes(artistValue.toLowerCase());
+	const descriptionIsPlaceholder = !descriptionValue || descriptionValue.toLowerCase().startsWith('description of your');
+	const artistHtml = artistIsPlaceholder ? '' : `<p class="artist">${song.artist}</p>`;
+	const descriptionHtml = descriptionIsPlaceholder ? '' : `<p class="description">${song.description}</p>`;
+	const detailHeaderHtml = artistHtml || descriptionHtml ? `<div class="detail-header">${artistHtml}${descriptionHtml}</div>` : '';
 	card.innerHTML = `
 		<div class="song-summary">
 			<div class="summary-info" onclick="playSong('${song.id}')">
@@ -61,10 +69,7 @@ function createSongCard(song) {
 			▶ Play
 		</button>
 		<div class="detail-section">
-			<div class="detail-header">
-				<p class="artist">${song.artist || 'Unknown Artist'}</p>
-				${song.description ? `<p class="description">${song.description}</p>` : ''}
-			</div>
+			${detailHeaderHtml}
 			<div class="rating-section">
 				<div class="rating-stars" id="rating-stars-${song.id}">
 					${[1, 2, 3, 4, 5].map((i) => `<span class="star" data-rating="${i}" onclick="rateSong('${song.id}', ${i})">★</span>`).join('')}
