@@ -22,7 +22,7 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
-    background: linear-gradient(180deg, #05000a 0%, #0a0014 45%, #020005 100%);
+    background: transparent;
     position: relative;
     color: var(--text-main);
     overflow-x: hidden;
@@ -176,7 +176,7 @@ body {
 }
 
 .main-content {
-    background: rgba(20, 10, 35, 0.4);
+    background: rgba(20, 10, 35, 0.2);
     border-radius: 30px;
     padding: 24px 28px;
     border: var(--glass-border);
@@ -185,7 +185,7 @@ body {
     gap: 24px;
     overflow: hidden;
     box-shadow: var(--shadow);
-    backdrop-filter: blur(30px);
+    backdrop-filter: blur(8px);
 }
 
 .top-bar {

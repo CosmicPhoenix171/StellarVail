@@ -19,5 +19,13 @@
         "artist": "Your Name",
         "filename": "song3.wav",
         "description": "Description of your third song"
+    },
+    {
+        "id": "song4",
+        "title": "Song Title 4",
+        "artist": "Your Name",
+        "filename": "song4.wav",
+        "description": "Description of your fourth song"
     }
+
 ]
