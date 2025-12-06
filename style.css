@@ -185,7 +185,7 @@ body {
     gap: 24px;
     overflow: hidden;
     box-shadow: var(--shadow);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(4px);
 }
 
 .top-bar {
@@ -225,7 +225,7 @@ body {
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -254,7 +254,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
 }
 
 .status-dot {
@@ -340,7 +340,7 @@ body {
     flex-direction: column;
     gap: 12px;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
 }
 .song-card:hover {
     transform: translateY(-6px);
@@ -563,7 +563,7 @@ body {
     gap: 16px;
     overflow: hidden;
     box-shadow: var(--shadow);
-    backdrop-filter: blur(30px);
+    backdrop-filter: blur(10px);
 }
 
 .now-playing-card {
@@ -606,7 +606,7 @@ body {
     display: flex;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
 }
 
 #audio-player {
