@@ -1,17 +1,17 @@
 [
     {
         "id": "song1",
+        "title": "Tik",
+        "artist": "Your Name",
+        "filename": "Tik.wav",
+        "description": "Description of your third song"
+    },
+    {
+        "id": "song2",
         "title": "Before morning rise",
         "artist": "Your Name",
         "filename": "before morning rise.wav",
         "description": "Description of your first song"
-    },
-    {
-        "id": "song2",
-        "title": "Song Title 2",
-        "artist": "Your Name",
-        "filename": "song2.wav",
-        "description": "Description of your second song"
     },
     {
         "id": "song3",
