@@ -4,6 +4,8 @@ let songsData = [];
 let shuffleMode = false;
 let activeCardElement = null;
 let activeCardPlaceholder = null;
+let listenCreditSongId = null;
+let listenCredited = false;
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -12,6 +14,19 @@ const songsContainer = document.getElementById('songs-container');
 // Autoplay next track when one finishes
 audioPlayer.addEventListener('ended', () => {
 	playNextSong();
+});
+
+// Credit a listen only after 75% of the track is played
+audioPlayer.addEventListener('timeupdate', () => {
+	if (!currentSongId || listenCredited === true) return;
+
+	const duration = audioPlayer.duration;
+	if (!duration || isNaN(duration) || duration === Infinity) return;
+
+	if (audioPlayer.currentTime >= duration * 0.75 && listenCreditSongId === currentSongId) {
+		incrementListenCount(currentSongId);
+		listenCredited = true;
+	}
 });
 
 // ===== DATA LOADING =====
@@ -104,7 +119,8 @@ function playSong(songId) {
 	audioPlayer.src = `music/${song.filename}`;
 	audioPlayer.play().catch((err) => console.error('Playback error:', err));
 
-	incrementListenCount(songId);
+	listenCreditSongId = songId;
+	listenCredited = false;
 	updateNowPlayingCard(song);
 
 	document.querySelectorAll('.play-button').forEach((btn) => {
