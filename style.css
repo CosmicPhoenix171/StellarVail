@@ -371,7 +371,7 @@ body {
     flex-direction: column;
     gap: 12px;
     transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(2px);
 }
 .song-card:hover {
     transform: translateY(-6px);
