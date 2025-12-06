@@ -15,31 +15,121 @@
     },
     {
         "id": "song3",
-        "title": "Song Title 3",
+        "title": "Broken",
         "artist": "Your Name",
-        "filename": "song3.wav",
-        "description": "Description of your third song"
+        "filename": "Broken.wav",
+        "description": "Description of your song"
     },
     {
         "id": "song4",
-        "title": "Song Title 4",
+        "title": "1 Unread",
         "artist": "Your Name",
-        "filename": "song4.wav",
-        "description": "Description of your fourth song"
+        "filename": "1 Unread.wav",
+        "description": "Description of your song"
     },
     {
         "id": "song5",
-        "title": "Song Title 5",
+        "title": "burn-it",
         "artist": "Your Name",
-        "filename": "song5.wav",
-        "description": "Description of your fifth song"
+        "filename": "burn-it.wav",
+        "description": "Description of your song"
     },
     {
         "id": "song6",
-        "title": "Song Title 6",
+        "title": "Chemical Beat",
         "artist": "Your Name",
-        "filename": "song6.wav",
-        "description": "Description of your sixth song"
+        "filename": "Chemical  Beat.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song7",
+        "title": "Demon in Disguise",
+        "artist": "Your Name",
+        "filename": "Demon in Disguise.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song8",
+        "title": "Demons",
+        "artist": "Your Name",
+        "filename": "Demons.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song9",
+        "title": "Dream escape",
+        "artist": "Your Name",
+        "filename": "Dream escape.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song10",
+        "title": "Emotion",
+        "artist": "Your Name",
+        "filename": "Emotion.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song11",
+        "title": "fantasy or reality",
+        "artist": "Your Name",
+        "filename": "fantasy or reality.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song12",
+        "title": "Feel",
+        "artist": "Your Name",
+        "filename": "Feel.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song13",
+        "title": "Hide Away",
+        "artist": "Your Name",
+        "filename": "Hide Away.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song14",
+        "title": "Laser Fury",
+        "artist": "Your Name",
+        "filename": "Laser Fury.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song15",
+        "title": "midnight Ride",
+        "artist": "Your Name",
+        "filename": "midnight Ride.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song16",
+        "title": "Neon Riff",
+        "artist": "Your Name",
+        "filename": "Neon Riff.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song17",
+        "title": "Not enough",
+        "artist": "Your Name",
+        "filename": "Not enough.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song18",
+        "title": "Villain",
+        "artist": "Your Name",
+        "filename": "Villain.wav",
+        "description": "Description of your song"
+    },
+    {
+        "id": "song19",
+        "title": "where",
+        "artist": "Your Name",
+        "filename": "where.wav",
+        "description": "Description of your song"
     }
-
 ]
