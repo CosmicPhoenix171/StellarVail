@@ -2,134 +2,96 @@
     {
         "id": "song1",
         "title": "Tik",
-        "artist": "Your Name",
-        "filename": "Tik.wav",
-        "description": "Description of your third song"
+        "filename": "Tik.wav"
     },
     {
         "id": "song2",
         "title": "Before morning rise",
-        "artist": "Your Name",
-        "filename": "before morning rise.wav",
-        "description": "Description of your first song"
+        "filename": "before morning rise.wav"
     },
     {
         "id": "song3",
         "title": "Broken",
-        "artist": "Your Name",
-        "filename": "Broken.wav",
-        "description": "Description of your song"
+        "filename": "Broken.wav"
     },
     {
         "id": "song4",
         "title": "1 Unread",
-        "artist": "Your Name",
-        "filename": "1 Unread.wav",
-        "description": "Description of your song"
+        "filename": "1 Unread.wav"
     },
     {
         "id": "song5",
         "title": "burn-it",
-        "artist": "Your Name",
-        "filename": "burn-it.wav",
-        "description": "Description of your song"
+        "filename": "burn-it.wav"
     },
     {
         "id": "song6",
         "title": "Chemical Beat",
-        "artist": "Your Name",
-        "filename": "Chemical  Beat.wav",
-        "description": "Description of your song"
+        "filename": "Chemical  Beat.wav"
     },
     {
         "id": "song7",
         "title": "Demon in Disguise",
-        "artist": "Your Name",
-        "filename": "Demon in Disguise.wav",
-        "description": "Description of your song"
+        "filename": "Demon in Disguise.wav"
     },
     {
         "id": "song8",
         "title": "Demons",
-        "artist": "Your Name",
-        "filename": "Demons.wav",
-        "description": "Description of your song"
+        "filename": "Demons.wav"
     },
     {
         "id": "song9",
         "title": "Dream escape",
-        "artist": "Your Name",
-        "filename": "Dream escape.wav",
-        "description": "Description of your song"
+        "filename": "Dream escape.wav"
     },
     {
         "id": "song10",
         "title": "Emotion",
-        "artist": "Your Name",
-        "filename": "Emotion.wav",
-        "description": "Description of your song"
+        "filename": "Emotion.wav"
     },
     {
         "id": "song11",
         "title": "fantasy or reality",
-        "artist": "Your Name",
-        "filename": "fantasy or reality.wav",
-        "description": "Description of your song"
+        "filename": "fantasy or reality.wav"
     },
     {
         "id": "song12",
         "title": "Feel",
-        "artist": "Your Name",
-        "filename": "Feel.wav",
-        "description": "Description of your song"
+        "filename": "Feel.wav"
     },
     {
         "id": "song13",
         "title": "Hide Away",
-        "artist": "Your Name",
-        "filename": "Hide Away.wav",
-        "description": "Description of your song"
+        "filename": "Hide Away.wav"
     },
     {
         "id": "song14",
         "title": "Laser Fury",
-        "artist": "Your Name",
-        "filename": "Laser Fury.wav",
-        "description": "Description of your song"
+        "filename": "Laser Fury.wav"
     },
     {
         "id": "song15",
         "title": "midnight Ride",
-        "artist": "Your Name",
-        "filename": "midnight Ride.wav",
-        "description": "Description of your song"
+        "filename": "midnight Ride.wav"
     },
     {
         "id": "song16",
         "title": "Neon Riff",
-        "artist": "Your Name",
-        "filename": "Neon Riff.wav",
-        "description": "Description of your song"
+        "filename": "Neon Riff.wav"
     },
     {
         "id": "song17",
         "title": "Not enough",
-        "artist": "Your Name",
-        "filename": "Not enough.wav",
-        "description": "Description of your song"
+        "filename": "Not enough.wav"
     },
     {
         "id": "song18",
         "title": "Villain",
-        "artist": "Your Name",
-        "filename": "Villain.wav",
-        "description": "Description of your song"
+        "filename": "Villain.wav"
     },
     {
         "id": "song19",
         "title": "where",
-        "artist": "Your Name",
-        "filename": "where.wav",
-        "description": "Description of your song"
+        "filename": "where.wav"
     }
 ]
