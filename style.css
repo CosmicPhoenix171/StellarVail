@@ -266,7 +266,8 @@ body {
     grid-template-rows: minmax(0, 1fr) 110px;
     gap: 24px;
     padding: 24px;
-    height: 100vh;
+    min-height: 100vh;
+    height: auto;
 }
 
 .content-column {
@@ -567,8 +568,13 @@ body {
 .star { font-size: 1.6em; color: rgba(255,255,255,0.1); cursor: pointer; transition: color 0.2s; }
 .star:hover, .star.filled { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
 
-.feedback-section { margin-top: 10px; }
-.feedback-section h4 { margin-bottom: 10px; font-size: 1em; color: var(--text-muted); }
+.feedback-section { margin-top: 10px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; background: rgba(0,0,0,0.2); }
+.feedback-header-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.feedback-header-row h4 { margin: 0; font-size: 1em; color: var(--text-muted); }
+.feedback-toggle { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: var(--text-main); border-radius: 10px; padding: 6px 10px; cursor: pointer; }
+.feedback-toggle:hover { border-color: var(--accent); }
+.feedback-body { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.feedback-section.collapsed .feedback-body { display: none; }
 
 .feedback-form input,
 .feedback-form textarea {
@@ -623,9 +629,7 @@ body {
 }
 
 .feedback-list {
-    max-height: 260px;
-    overflow-y: auto;
-    margin-top: 16px;
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -640,7 +644,9 @@ body {
 
 .feedback-header {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
     font-size: 0.85em;
     color: var(--text-muted);
     margin-bottom: 4px;
@@ -655,6 +661,24 @@ body {
     font-size: 0.9em;
 }
 
+.you-pill {
+    background: rgba(0, 243, 255, 0.12);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8em;
+}
+
+.edit-feedback-btn {
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    padding: 6px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.edit-feedback-btn:hover { border-color: var(--accent); }
+
 .now-playing-panel {
     background: rgba(15, 5, 25, 0.6);
     border-radius: 26px;
@@ -663,14 +687,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
 }
 
 .now-playing-card {
     flex: 1;
-    overflow-y: auto;
+    overflow: visible;
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 20px;
     padding: 20px;

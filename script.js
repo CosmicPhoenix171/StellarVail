@@ -109,19 +109,24 @@ function createSongCard(song) {
 				</div>
 				<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
 			</div>
-			<div class="feedback-section">
-				<h4>Comments</h4>
-				<div class="feedback-form">
-					<input type="text" id="feedback-name-${song.id}" placeholder="Your name (optional, default: Anonymous)" maxlength="50">
-					<div class="textarea-with-timestamp">
-						<textarea id="feedback-text-${song.id}" placeholder="Leave your feedback..." maxlength="500"></textarea>
-						<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱️ Add Time</button>
-					</div>
-					<input type="hidden" id="feedback-timestamp-${song.id}" value="">
-					<button onclick="submitFeedback('${song.id}')">Post Comment</button>
+			<div class="feedback-section collapsed" id="feedback-section-${song.id}">
+				<div class="feedback-header-row">
+					<h4>Comments</h4>
+					<button type="button" class="feedback-toggle" onclick="toggleFeedback('${song.id}')">▼</button>
 				</div>
-				<div class="feedback-list" id="feedback-list-${song.id}">
-					<p class="no-feedback">No comments yet. Be the first!</p>
+				<div class="feedback-body" id="feedback-body-${song.id}">
+					<div class="feedback-form">
+						<input type="text" id="feedback-name-${song.id}" placeholder="Your name (optional, default: Anonymous)" maxlength="50">
+						<div class="textarea-with-timestamp">
+							<textarea id="feedback-text-${song.id}" placeholder="Leave your feedback..." maxlength="500"></textarea>
+							<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱️ Add Time</button>
+						</div>
+						<input type="hidden" id="feedback-timestamp-${song.id}" value="">
+						<button onclick="submitFeedback('${song.id}')">Post Comment</button>
+					</div>
+					<div class="feedback-list" id="feedback-list-${song.id}">
+						<p class="no-feedback">No comments yet. Be the first!</p>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -475,6 +480,19 @@ function submitFeedback(songId) {
 			console.error('Error saving feedback:', error);
 			alert('Error posting comment. Please try again.');
 		});
+}
+
+function toggleFeedback(songId) {
+	const section = document.getElementById(`feedback-section-${songId}`);
+	const body = document.getElementById(`feedback-body-${songId}`);
+	const toggleBtn = section ? section.querySelector('.feedback-toggle') : null;
+	if (!section || !body) return;
+
+	const collapsed = section.classList.toggle('collapsed');
+	body.style.display = collapsed ? 'none' : 'flex';
+	if (toggleBtn) {
+		toggleBtn.textContent = collapsed ? '▼' : '▲';
+	}
 }
 
 // ===== UTILITIES =====
