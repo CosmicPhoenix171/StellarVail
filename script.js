@@ -277,6 +277,7 @@ async function ensureAudioAnalyser() {
 	const source = audioCtx.createMediaElementSource(audioPlayer);
 	analyser = audioCtx.createAnalyser();
 	analyser.fftSize = 256;
+	analyser.smoothingTimeConstant = 0.85;
 	const bufferLength = analyser.frequencyBinCount;
 	dataArray = new Uint8Array(bufferLength);
 
@@ -291,12 +292,20 @@ function startStarBoost() {
 	if (starBoostRaf) cancelAnimationFrame(starBoostRaf);
 
 	const tick = () => {
+		if (audioPlayer.paused) {
+			document.documentElement.style.setProperty('--star-boost', '0');
+			starBoostRaf = requestAnimationFrame(tick);
+			return;
+		}
+
 		analyser.getByteFrequencyData(dataArray);
+		// Focus on low/mid bins for beat-like energy (first 64 bins)
+		const bins = Math.min(64, dataArray.length);
 		let sum = 0;
-		for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-		const avg = sum / dataArray.length;
-		// Map average magnitude (0-255) to a modest boost (0 to ~0.8)
-		const boost = Math.min(0.8, (avg / 255) * 0.8);
+		for (let i = 0; i < bins; i++) sum += dataArray[i];
+		const avg = sum / bins;
+		// Map average magnitude to a stronger visible boost (0 to ~1.5)
+		const boost = Math.min(1.5, (avg / 255) * 2);
 		document.documentElement.style.setProperty('--star-boost', boost.toFixed(3));
 
 		starBoostRaf = requestAnimationFrame(tick);
