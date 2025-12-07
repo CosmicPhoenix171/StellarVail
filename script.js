@@ -114,7 +114,7 @@ function createSongCard(song) {
 					<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
 				</div>
-				<span class="listen-count" id="listen-count-${song.id}">👂 0 listens</span>
+				<span class="listen-count" id="listen-count-${song.id}">0 listens</span>
 			</div>
 		</div>
 		<button class="play-button" onclick="playSong('${song.id}')" data-song-id="${song.id}">
@@ -279,7 +279,7 @@ function loadListenCount(songId) {
 		const count = snapshot.val() || 0;
 		const listenElement = document.getElementById(`listen-count-${songId}`);
 		if (listenElement) {
-			listenElement.textContent = `👂 ${count} listen${count === 1 ? '' : 's'}`;
+			listenElement.textContent = `${count} listen${count === 1 ? '' : 's'}`;
 		}
 	});
 }
