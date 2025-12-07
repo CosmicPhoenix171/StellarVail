@@ -16,6 +16,21 @@ let clientId = getClientId();
 const audioPlayer = document.getElementById('audio-player');
 const songsContainer = document.getElementById('songs-container');
 
+// Spacebar toggles play/pause (except when typing in inputs/textareas/buttons)
+document.addEventListener('keydown', (event) => {
+	if (event.code !== 'Space') return;
+	if (shouldIgnoreHotkey(event)) return;
+	event.preventDefault();
+
+	if (!audioPlayer || !audioPlayer.src) return;
+
+	if (audioPlayer.paused) {
+		audioPlayer.play().catch((err) => console.warn('Playback error:', err));
+	} else {
+		audioPlayer.pause();
+	}
+});
+
 // Autoplay next track when one finishes
 audioPlayer.addEventListener('ended', () => {
 	playNextSong();
@@ -555,6 +570,11 @@ function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
 	return div.innerHTML;
+}
+
+function shouldIgnoreHotkey(event) {
+	const tag = (event.target && event.target.tagName) ? event.target.tagName.toUpperCase() : '';
+	return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || event.target?.isContentEditable;
 }
 
 // Prefill feedback form with an existing comment so the current device can edit/overwrite it.
