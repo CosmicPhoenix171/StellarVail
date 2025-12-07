@@ -70,7 +70,21 @@ body {
         radial-gradient(circle at 25% 15%, white 1px, transparent 2px),
         radial-gradient(circle at 70% 40%, white 1.5px, transparent 3px),
         radial-gradient(circle at 12% 65%, white 1px, transparent 2px),
-        radial-gradient(circle at 88% 75%, white 1px, transparent 2px);
+        radial-gradient(circle at 88% 75%, white 1px, transparent 2px),
+        radial-gradient(circle at 22% 72%, white 1px, transparent 3px),
+        radial-gradient(circle at 78% 62%, rgba(189,0,255,0.8) 1.4px, transparent 4px),
+        radial-gradient(circle at 32% 18%, white 1.2px, transparent 3px),
+        radial-gradient(circle at 68% 12%, white 1px, transparent 3px),
+        radial-gradient(circle at 12% 32%, rgba(0,243,255,0.8) 1.4px, transparent 4px),
+        radial-gradient(circle at 92% 42%, white 1px, transparent 2px),
+        radial-gradient(circle at 44% 12%, white 1px, transparent 3px),
+        radial-gradient(circle at 58% 72%, white 1.4px, transparent 4px),
+        radial-gradient(circle at 72% 88%, white 1px, transparent 3px),
+        radial-gradient(circle at 18% 88%, rgba(0,243,255,0.7) 1.5px, transparent 4px),
+        radial-gradient(circle at 8% 52%, white 1px, transparent 2px),
+        radial-gradient(circle at 50% 22%, white 1.1px, transparent 3px),
+        radial-gradient(circle at 38% 42%, white 1px, transparent 2px),
+        radial-gradient(circle at 62% 52%, rgba(189,0,255,0.7) 1.3px, transparent 4px);
     opacity: calc(0.05 + (var(--star-boost, 0) * 0.95));
     animation: starDrift 160s linear infinite;
     z-index: 1;
@@ -101,7 +115,21 @@ body {
         radial-gradient(circle at 45% 15%, white 1px, transparent 2px),
         radial-gradient(circle at 20% 70%, white 1.5px, transparent 3px),
         radial-gradient(circle at 75% 30%, white 1px, transparent 2px),
-        radial-gradient(circle at 55% 85%, white 1px, transparent 2px);
+        radial-gradient(circle at 55% 85%, white 1px, transparent 2px),
+        radial-gradient(circle at 12% 22%, white 1px, transparent 2px),
+        radial-gradient(circle at 28% 82%, rgba(0,243,255,0.8) 1.2px, transparent 3px),
+        radial-gradient(circle at 82% 52%, white 1.2px, transparent 3px),
+        radial-gradient(circle at 48% 72%, rgba(189,0,255,0.8) 1.3px, transparent 4px),
+        radial-gradient(circle at 62% 32%, white 1px, transparent 2px),
+        radial-gradient(circle at 8% 68%, white 1px, transparent 2px),
+        radial-gradient(circle at 92% 12%, white 1.4px, transparent 3px),
+        radial-gradient(circle at 36% 58%, white 1px, transparent 2px),
+        radial-gradient(circle at 52% 8%, white 1px, transparent 2px),
+        radial-gradient(circle at 72% 48%, rgba(0,255,255,0.7) 1.5px, transparent 3px),
+        radial-gradient(circle at 18% 48%, white 1px, transparent 2px),
+        radial-gradient(circle at 44% 32%, white 1px, transparent 2px),
+        radial-gradient(circle at 58% 92%, white 1.1px, transparent 3px),
+        radial-gradient(circle at 30% 92%, white 1.2px, transparent 3px);
     opacity: calc(0.04 + (var(--star-boost, 0) * 0.9));
     animation: starDrift 200s linear infinite reverse;
     z-index: 1;
