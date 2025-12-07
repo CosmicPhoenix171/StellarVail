@@ -411,12 +411,23 @@ function loadFeedback(songId) {
 						? `<span class="timestamp-badge" onclick="seekToTime('${songId}', ${fb.songTimestamp})" title="Jump to ${formatSongTime(fb.songTimestamp)}">⏱️ ${formatSongTime(fb.songTimestamp)}</span>`
 						: '';
 
+				const isMine = fb.clientId === clientId;
+				const encodedComment = encodeURIComponent(fb.comment || '');
+				const encodedName = encodeURIComponent(fb.displayName || 'Anonymous');
+				const timestampAttr = fb.songTimestamp !== undefined ? `data-song-timestamp="${fb.songTimestamp}"` : '';
+				const editBtn = isMine
+					? `<button class="edit-feedback-btn" data-comment="${encodedComment}" data-name="${encodedName}" ${timestampAttr} onclick="prefillFeedback('${songId}', this)">✏️ Edit</button>`
+					: '';
+
+				const youTag = isMine ? '<span class="you-pill">You</span>' : '';
+
 				return `
 					<div class="feedback-item">
 						<div class="feedback-header">
-							<span class="feedback-author">${fb.displayName || 'Anonymous'}</span>
+							<span class="feedback-author">${fb.displayName || 'Anonymous'}</span>${youTag}
 							${timestampBadge}
 							<span class="feedback-time">${formatTime(fb.timestamp)}</span>
+							${editBtn}
 						</div>
 						<p class="feedback-text">${escapeHtml(fb.comment)}</p>
 					</div>
@@ -442,10 +453,11 @@ function submitFeedback(songId) {
 
 	if (typeof database === 'undefined') return;
 
-	const feedbackRef = database.ref(`songs/${songId}/feedback`).push();
+	const feedbackRef = database.ref(`songs/${songId}/feedback/${clientId}`);
 	const payload = {
 		displayName,
 		comment,
+		clientId,
 		timestamp: Date.now(),
 	};
 	if (typeof songTimestamp === 'number' && !Number.isNaN(songTimestamp)) {
@@ -525,6 +537,29 @@ function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
 	return div.innerHTML;
+}
+
+// Prefill feedback form with an existing comment so the current device can edit/overwrite it.
+function prefillFeedback(songId, buttonEl) {
+	if (!buttonEl) return;
+	const name = decodeURIComponent(buttonEl.getAttribute('data-name') || '');
+	const comment = decodeURIComponent(buttonEl.getAttribute('data-comment') || '');
+	const tsAttr = buttonEl.getAttribute('data-song-timestamp');
+	const songTimestamp = tsAttr ? parseFloat(tsAttr) : '';
+
+	const nameInput = document.getElementById(`feedback-name-${songId}`);
+	const textInput = document.getElementById(`feedback-text-${songId}`);
+	const timestampInput = document.getElementById(`feedback-timestamp-${songId}`);
+
+	if (nameInput) nameInput.value = name || '';
+	if (textInput) {
+		textInput.value = comment || '';
+		textInput.focus();
+		textInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+	if (timestampInput) {
+		timestampInput.value = songTimestamp !== '' && !Number.isNaN(songTimestamp) ? songTimestamp : '';
+	}
 }
 
 // Persist a client-scoped identifier so guests can update their own rating.
