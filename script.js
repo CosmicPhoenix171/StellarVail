@@ -106,7 +106,7 @@ function createSongCard(song) {
 	const detailHeaderHtml = artistHtml || descriptionHtml ? `<div class="detail-header">${artistHtml}${descriptionHtml}</div>` : '';
 	card.innerHTML = `
 		<div class="song-summary">
-			<div class="summary-info" onclick="playSong('${song.id}')">
+			<div class="summary-info">
 				<h3>${song.title}</h3>
 			</div>
 			<div class="summary-metrics">
