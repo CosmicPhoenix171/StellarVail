@@ -303,8 +303,8 @@ function startStarBoost() {
 		let sum = 0;
 		for (let i = 0; i < bins; i++) sum += dataArray[i];
 		const avg = sum / bins;
-		// Map average magnitude to a stronger visible boost (0 to ~1.5)
-		const boost = Math.min(1.5, (avg / 255) * 2);
+		// Map average magnitude to a stronger visible boost (0 to ~2)
+		const boost = Math.min(2, (avg / 255) * 3);
 		document.documentElement.style.setProperty('--star-boost', boost.toFixed(3));
 
 		starBoostRaf = requestAnimationFrame(tick);
