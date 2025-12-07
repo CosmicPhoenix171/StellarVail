@@ -739,6 +739,10 @@ body {
     z-index: 20;
 }
 
+.player-bar.hidden {
+    display: none;
+}
+
 #audio-player {
     width: 100%;
     filter: invert(1) hue-rotate(180deg) saturate(1.5);

@@ -15,6 +15,10 @@ let clientId = getClientId();
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
 const songsContainer = document.getElementById('songs-container');
+const playerBar = document.querySelector('.player-bar');
+
+// Hide player until a song is selected
+if (playerBar) playerBar.classList.add('hidden');
 
 // Spacebar toggles play/pause (except when typing in inputs/textareas/buttons)
 document.addEventListener('keydown', (event) => {
@@ -153,6 +157,8 @@ function createSongCard(song) {
 function playSong(songId) {
 	const song = songsData.find((s) => s.id === songId);
 	if (!song) return;
+
+	if (playerBar) playerBar.classList.remove('hidden');
 
 	audioPlayer.src = `music/${song.filename}`;
 	audioPlayer.play().catch((err) => console.error('Playback error:', err));
