@@ -6,6 +6,10 @@ let activeCardElement = null;
 let activeCardPlaceholder = null;
 let listenCreditSongId = null;
 let listenCredited = false;
+let audioCtx = null;
+let analyser = null;
+let dataArray = null;
+let starBoostRaf = null;
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -28,6 +32,19 @@ audioPlayer.addEventListener('timeupdate', () => {
 		listenCredited = true;
 	}
 });
+
+// Reactively brighten stars based on playback loudness
+audioPlayer.addEventListener('play', async () => {
+	try {
+		await ensureAudioAnalyser();
+		startStarBoost();
+	} catch (err) {
+		console.warn('Audio analyser unavailable:', err);
+	}
+});
+
+audioPlayer.addEventListener('pause', stopStarBoost);
+audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== DATA LOADING =====
 async function loadSongs() {
@@ -245,6 +262,53 @@ function incrementListenCount(songId) {
 
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.transaction((currentCount) => (currentCount || 0) + 1);
+}
+
+// ===== STAR BOOST (AUDIO REACTIVE) =====
+async function ensureAudioAnalyser() {
+	if (audioCtx && analyser && dataArray) return;
+
+	const AudioContext = window.AudioContext || window.webkitAudioContext;
+	if (!AudioContext) throw new Error('Web Audio not supported');
+
+	audioCtx = audioCtx || new AudioContext();
+	await audioCtx.resume();
+
+	const source = audioCtx.createMediaElementSource(audioPlayer);
+	analyser = audioCtx.createAnalyser();
+	analyser.fftSize = 256;
+	const bufferLength = analyser.frequencyBinCount;
+	dataArray = new Uint8Array(bufferLength);
+
+	// Connect: source -> analyser -> destination
+	source.connect(analyser);
+	analyser.connect(audioCtx.destination);
+}
+
+function startStarBoost() {
+	if (!analyser || !dataArray) return;
+
+	if (starBoostRaf) cancelAnimationFrame(starBoostRaf);
+
+	const tick = () => {
+		analyser.getByteFrequencyData(dataArray);
+		let sum = 0;
+		for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+		const avg = sum / dataArray.length;
+		// Map average magnitude (0-255) to a modest boost (0 to ~0.8)
+		const boost = Math.min(0.8, (avg / 255) * 0.8);
+		document.documentElement.style.setProperty('--star-boost', boost.toFixed(3));
+
+		starBoostRaf = requestAnimationFrame(tick);
+	};
+
+	starBoostRaf = requestAnimationFrame(tick);
+}
+
+function stopStarBoost() {
+	if (starBoostRaf) cancelAnimationFrame(starBoostRaf);
+	starBoostRaf = null;
+	document.documentElement.style.setProperty('--star-boost', '0');
 }
 
 // ===== RATINGS =====

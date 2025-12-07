@@ -11,6 +11,7 @@
     --shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
     --glow-text: 0 0 10px rgba(189, 0, 255, 0.5);
     --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --star-boost: 0;
 }
 
 * {
@@ -74,6 +75,7 @@ body {
     animation: starDrift 160s linear infinite;
     z-index: 1;
     mix-blend-mode: screen;
+    filter: brightness(calc(1 + var(--star-boost, 0)));
 }
 
 .aurora-stars-2 {
@@ -101,6 +103,7 @@ body {
     animation: starDrift 200s linear infinite reverse;
     z-index: 1;
     mix-blend-mode: screen;
+    filter: brightness(calc(1 + var(--star-boost, 0)));
 }
 
 .aurora-wave {
