@@ -10,6 +10,7 @@ let audioCtx = null;
 let analyser = null;
 let dataArray = null;
 let starBoostRaf = null;
+let clientId = getClientId();
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -360,34 +361,21 @@ function updateStarsDisplay(songId, average) {
 }
 
 function rateSong(songId, rating) {
-	const ratedKey = `rated_${songId}`;
-	if (localStorage.getItem(ratedKey)) {
-		const messageEl = document.getElementById(`rating-message-${songId}`);
-		if (messageEl) {
-			messageEl.textContent = 'You already rated this song';
-			setTimeout(() => {
-				messageEl.textContent = 'Click stars to rate';
-			}, 3000);
-		}
-		return;
-	}
-
 	if (typeof database === 'undefined') return;
 
-	const ratingRef = database.ref(`songs/${songId}/ratings`).push();
+	const ratingRef = database.ref(`songs/${songId}/ratings/${clientId}`);
 	ratingRef
 		.set({
 			rating,
 			timestamp: Date.now(),
 		})
 		.then(() => {
-			localStorage.setItem(ratedKey, 'true');
 			const messageEl = document.getElementById(`rating-message-${songId}`);
 			if (messageEl) {
-				messageEl.textContent = 'Thanks for rating!';
+				messageEl.textContent = 'Rating saved';
 				setTimeout(() => {
 					messageEl.textContent = 'Click stars to rate';
-				}, 3000);
+				}, 2500);
 			}
 		})
 		.catch((error) => {
@@ -537,6 +525,16 @@ function escapeHtml(text) {
 	const div = document.createElement('div');
 	div.textContent = text;
 	return div.innerHTML;
+}
+
+// Persist a client-scoped identifier so guests can update their own rating.
+function getClientId() {
+	const key = 'sv_client_id';
+	const existing = localStorage.getItem(key);
+	if (existing) return existing;
+	const newId = `guest_${Math.random().toString(36).slice(2, 10)}`;
+	localStorage.setItem(key, newId);
+	return newId;
 }
 
 // Initialize

@@ -14,5 +14,12 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+// Optional verbose logging to help debug Realtime Database traffic in dev.
+// Comment out if too noisy.
+if (typeof firebase !== 'undefined' && firebase.database) {
+    firebase.database.enableLogging(true);
+    console.log('[Firebase] Initialized app:', firebase.app().name);
+}
+
 // Get a reference to the database service
 const database = firebase.database();
