@@ -441,13 +441,14 @@ body {
     flex-direction: column;
     gap: 12px;
     transition: all 0.3s ease;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(0px);
 }
 .song-card:hover {
     transform: translateY(-6px);
     background: rgba(255, 255, 255, 0.07);
     border-color: var(--accent);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 243, 255, 0.2);
+    backdrop-filter: blur(2px);
 }
 .song-card.in-now-playing {
     border-color: var(--accent-2);
