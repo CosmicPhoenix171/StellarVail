@@ -1,15 +1,14 @@
-// Firebase Configuration
-// TODO: Replace with your Firebase project configuration
-// Get this from Firebase Console > Project Settings > General > Your apps > Web app
-
+// Firebase Configuration — StellarVail project
+// Values supplied by the project owner; used by the compat SDK loaded in index.html.
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCx5L9o7rmdM2TzgjMEKjOGAXeUarAI_ew",
+    authDomain: "stellarvail.firebaseapp.com",
+    databaseURL: "https://stellarvail-default-rtdb.firebaseio.com",
+    projectId: "stellarvail",
+    storageBucket: "stellarvail.firebasestorage.app",
+    messagingSenderId: "963564296876",
+    appId: "1:963564296876:web:e333c37414e59e069b1d09",
+    measurementId: "G-RRXCY736RH"
 };
 
 // Initialize Firebase
