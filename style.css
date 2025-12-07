@@ -76,6 +76,9 @@ body {
     z-index: 1;
     mix-blend-mode: screen;
     filter: brightness(calc(1 + var(--star-boost, 0)));
+    transform: scale(calc(1 + (var(--star-boost, 0) * 0.35)));
+    transform-origin: center;
+    transition: transform 0.08s linear;
 }
 
 .aurora-stars-2 {
@@ -104,6 +107,9 @@ body {
     z-index: 1;
     mix-blend-mode: screen;
     filter: brightness(calc(1 + var(--star-boost, 0)));
+    transform: scale(calc(1 + (var(--star-boost, 0) * 0.35)));
+    transform-origin: center;
+    transition: transform 0.08s linear;
 }
 
 .aurora-wave {
