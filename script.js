@@ -184,13 +184,13 @@ function createSongCard(song) {
 				</div>
 				<div class="feedback-body" id="feedback-body-${song.id}">
 					<div class="feedback-form">
-						<input type="text" id="feedback-name-${song.id}" placeholder="Your name (optional, default: Anonymous)" maxlength="50">
-						<div class="textarea-with-timestamp">
-							<textarea id="feedback-text-${song.id}" placeholder="Leave your feedback..." maxlength="500"></textarea>
-							<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱️ Add Time</button>
-						</div>
+						<input type="text" id="feedback-name-${song.id}" placeholder="Name (optional)" maxlength="50">
+						<textarea id="feedback-text-${song.id}" placeholder="Write a comment..." maxlength="500"></textarea>
 						<input type="hidden" id="feedback-timestamp-${song.id}" value="">
-						<button onclick="submitFeedback('${song.id}')">Post Comment</button>
+						<div class="feedback-actions">
+							<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱ Timestamp</button>
+							<button class="submit-btn" onclick="submitFeedback('${song.id}')">Post</button>
+						</div>
 					</div>
 					<div class="feedback-list" id="feedback-list-${song.id}">
 						<p class="no-feedback">No comments yet. Be the first!</p>
