@@ -39,6 +39,10 @@ body {
         radial-gradient(circle at 15% 20%, rgba(100, 0, 255, 0.15), transparent 40%),
         radial-gradient(circle at 85% 12%, rgba(0, 243, 255, 0.1), transparent 45%),
         linear-gradient(170deg, rgba(5, 0, 10, 0.95) 0%, rgba(15, 5, 30, 0.9) 32%, rgba(2, 0, 5, 1) 75%);
+    contain: strict;
+    isolation: isolate;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .aurora-stars,
@@ -48,6 +52,10 @@ body {
 .aurora-noise {
     position: absolute;
     inset: -15%;
+    contain: layout style paint;
+    will-change: transform;
+    backface-visibility: hidden;
+    perspective: 1000px;
 }
 
 .aurora-stars {
@@ -91,7 +99,7 @@ body {
     z-index: 1;
     mix-blend-mode: screen;
     filter: brightness(calc(1 + var(--star-boost, 0)));
-    transform: scale(calc(1 + (var(--star-boost, 0) * 0.6)));
+    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.6)));
     transform-origin: center;
     transition: transform 0.05s linear, opacity 0.12s ease;
 }
@@ -136,7 +144,7 @@ body {
     z-index: 1;
     mix-blend-mode: screen;
     filter: brightness(calc(1 + var(--star-boost, 0)));
-    transform: scale(calc(1 + (var(--star-boost, 0) * 0.6)));
+    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.6)));
     transform-origin: center;
     transition: transform 0.05s linear, opacity 0.12s ease;
 }
@@ -158,7 +166,7 @@ body {
         24% 64%;
     opacity: calc(0.02 + (var(--star-boost, 0) * 0.9));
     filter: brightness(calc(0.8 + var(--star-boost, 0)));
-    transform: scale(calc(0.9 + (var(--star-boost, 0) * 0.7)));
+    transform: translateZ(0) scale(calc(0.9 + (var(--star-boost, 0) * 0.7)));
     transform-origin: center;
     transition: transform 0.08s linear, opacity 0.15s ease;
     animation: starVariantFloat 28s ease-in-out infinite;
@@ -181,6 +189,8 @@ body {
     mask-image: radial-gradient(75% 140% at 50% 20%, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 38%, rgba(0,0,0,0.15) 85%);
     background-size: 180% 180%;
     background-blend-mode: screen;
+    transform: translateZ(0);
+    isolation: isolate;
 }
 
 .wave-primary {
@@ -222,6 +232,7 @@ body {
             rgba(11, 91, 160, 0) 100%);
     animation: auroraPulse 20s ease-in-out infinite;
     opacity: 0.5;
+    transform: translateZ(0);
 }
 
 .aurora-noise {
@@ -230,34 +241,35 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
     background-size: 400px 400px;
     animation: noiseShift 14s linear infinite;
+    transform: translateZ(0);
 }
 
 @keyframes starDrift {
-    from { transform: translateY(0); }
-    to { transform: translateY(-200px); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, -200px, 0); }
 }
 
 @keyframes auroraCurtain {
-    0% { transform: translate(-15%, 0) scale(1.05) skewX(-4deg); background-position: 0% 30%; }
-    50% { transform: translate(10%, -6%) scale(1.15) skewX(3deg); background-position: 90% 60%; }
-    100% { transform: translate(-10%, 0) scale(1.05) skewX(-2deg); background-position: 0% 30%; }
+    0% { transform: translate3d(-15%, 0, 0) scale(1.05) skewX(-4deg); background-position: 0% 30%; }
+    50% { transform: translate3d(10%, -6%, 0) scale(1.15) skewX(3deg); background-position: 90% 60%; }
+    100% { transform: translate3d(-10%, 0, 0) scale(1.05) skewX(-2deg); background-position: 0% 30%; }
 }
 
 @keyframes auroraCurtainAlt {
-    0% { transform: translate(5%, -2%) scale(1) skewX(2deg); background-position: 100% 40%; }
-    50% { transform: translate(-12%, -8%) scale(1.12) skewX(-3deg); background-position: 10% 70%; }
-    100% { transform: translate(8%, -2%) scale(1) skewX(2deg); background-position: 100% 40%; }
+    0% { transform: translate3d(5%, -2%, 0) scale(1) skewX(2deg); background-position: 100% 40%; }
+    50% { transform: translate3d(-12%, -8%, 0) scale(1.12) skewX(-3deg); background-position: 10% 70%; }
+    100% { transform: translate3d(8%, -2%, 0) scale(1) skewX(2deg); background-position: 100% 40%; }
 }
 
 @keyframes auroraPulse {
-    0% { transform: translate(-8%, -4%) scale(0.95); opacity: 0.4; }
-    50% { transform: translate(12%, -10%) scale(1.2); opacity: 0.7; }
-    100% { transform: translate(-12%, -4%) scale(0.95); opacity: 0.4; }
+    0% { transform: translate3d(-8%, -4%, 0) scale(0.95); opacity: 0.4; }
+    50% { transform: translate3d(12%, -10%, 0) scale(1.2); opacity: 0.7; }
+    100% { transform: translate3d(-12%, -4%, 0) scale(0.95); opacity: 0.4; }
 }
 
 @keyframes noiseShift {
-    from { background-position: 0 0; }
-    to { background-position: 400px -400px; }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(400px, -400px, 0); }
 }
 
 .app-shell {
@@ -774,5 +786,20 @@ body {
     .search-bar,
     .user-pill {
         width: 100%;
+    }
+}
+
+/* Performance fallback for users without GPU acceleration or reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .aurora-stars,
+    .aurora-stars-2,
+    .aurora-star-variants,
+    .aurora-wave,
+    .aurora-noise,
+    .wave-primary,
+    .wave-secondary,
+    .wave-tertiary {
+        animation: none !important;
+        transition: none !important;
     }
 }
