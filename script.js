@@ -284,9 +284,13 @@ function playNextSong() {
 		return;
 	}
 
-	const currentIndex = songsData.findIndex((song) => song.id === currentSongId);
-	const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % songsData.length;
-	playSong(songsData[nextIndex].id);
+	// Get sorted order from DOM (reflects rating/listens sorting)
+	const sortedCards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
+	const sortedIds = sortedCards.map(card => card.dataset.songId);
+	
+	const currentIndex = sortedIds.indexOf(currentSongId);
+	const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % sortedIds.length;
+	playSong(sortedIds[nextIndex]);
 }
 
 function playRandomSong() {
