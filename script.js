@@ -18,6 +18,14 @@ let sortDebounceTimer = null;
 const isAdminMode = window.location.pathname.includes('/admin');
 const basePath = isAdminMode ? '../' : '';
 
+// Format date string (YYYY-MM-DD) to readable format
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
 const songsContainer = document.getElementById('songs-container');
@@ -184,10 +192,16 @@ function createSongCard(song) {
 	const descriptionHtml = descriptionIsPlaceholder ? '' : `<p class="description">${song.description}</p>`;
 	const detailHeaderHtml = artistHtml || descriptionHtml ? `<div class="detail-header">${artistHtml}${descriptionHtml}</div>` : '';
 	const ratingHiddenClass = isAdminMode ? '' : 'rating-hidden';
+	
+	// Format date for display
+	const dateAdded = song.dateAdded ? formatDate(song.dateAdded) : '';
+	const dateHtml = dateAdded ? `<span class="date-added">${dateAdded}</span>` : '';
+	
 	card.innerHTML = `
 		<div class="song-summary">
 			<div class="summary-info">
 				<h3>${song.title}</h3>
+				${dateHtml}
 			</div>
 			<div class="summary-metrics">
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${song.id}">

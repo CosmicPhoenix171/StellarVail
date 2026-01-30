@@ -517,7 +517,13 @@ body {
 .summary-info h3 {
     font-size: 1.2em;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.date-added {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.3px;
 }
 
 .summary-metrics {
