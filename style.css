@@ -811,3 +811,42 @@ body {
         transition: none !important;
     }
 }
+
+/* Low performance mode - toggled via JS for users experiencing lag */
+body.low-perf-mode .aurora-wave,
+body.low-perf-mode .wave-primary,
+body.low-perf-mode .wave-secondary,
+body.low-perf-mode .wave-tertiary {
+    filter: none !important;
+    animation-duration: 60s !important;
+    opacity: 0.4;
+}
+
+body.low-perf-mode .aurora-stars,
+body.low-perf-mode .aurora-stars-2 {
+    animation-duration: 300s !important;
+    filter: none !important;
+    mix-blend-mode: normal;
+}
+
+body.low-perf-mode .aurora-star-variants {
+    animation: none !important;
+    filter: none !important;
+    mix-blend-mode: normal;
+}
+
+body.low-perf-mode .aurora-noise {
+    display: none !important;
+}
+
+body.low-perf-mode .main-content,
+body.low-perf-mode .search-bar,
+body.low-perf-mode .user-pill,
+body.low-perf-mode .now-playing-panel,
+body.low-perf-mode .player-bar {
+    backdrop-filter: none !important;
+}
+
+body.low-perf-mode .song-card:hover {
+    backdrop-filter: none;
+}

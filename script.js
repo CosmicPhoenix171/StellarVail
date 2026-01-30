@@ -697,5 +697,60 @@ function getClientId() {
 	return newId;
 }
 
+// ===== PERFORMANCE MODE =====
+function togglePerfMode() {
+	document.body.classList.toggle('low-perf-mode');
+	const isLowPerf = document.body.classList.contains('low-perf-mode');
+	localStorage.setItem('sv_low_perf', isLowPerf ? '1' : '0');
+	
+	const btn = document.getElementById('perf-btn');
+	if (btn) {
+		btn.textContent = isLowPerf ? '⚡ Perf: ON' : '⚡ Perf';
+		btn.title = isLowPerf ? 'Low performance mode ON - click to disable' : 'Toggle low performance mode';
+	}
+}
+
+function initPerfMode() {
+	// Check saved preference
+	const savedPref = localStorage.getItem('sv_low_perf');
+	if (savedPref === '1') {
+		document.body.classList.add('low-perf-mode');
+		const btn = document.getElementById('perf-btn');
+		if (btn) btn.textContent = '⚡ Perf: ON';
+		return;
+	}
+	
+	// Auto-detect low performance (no GPU / low frame rate)
+	let frameCount = 0;
+	let lastTime = performance.now();
+	
+	function measureFPS(timestamp) {
+		frameCount++;
+		if (timestamp - lastTime >= 1000) {
+			const fps = frameCount;
+			frameCount = 0;
+			lastTime = timestamp;
+			
+			// If FPS is below 30, suggest low-perf mode
+			if (fps < 30 && !document.body.classList.contains('low-perf-mode')) {
+				console.log('Low FPS detected (' + fps + '), enabling low-perf mode');
+				document.body.classList.add('low-perf-mode');
+				localStorage.setItem('sv_low_perf', '1');
+				const btn = document.getElementById('perf-btn');
+				if (btn) btn.textContent = '⚡ Perf: ON';
+				return; // Stop measuring
+			}
+			
+			// Stop after 3 seconds of measurement
+			if (timestamp - startTime > 3000) return;
+		}
+		requestAnimationFrame(measureFPS);
+	}
+	
+	const startTime = performance.now();
+	requestAnimationFrame(measureFPS);
+}
+
 // Initialize
 loadSongs();
+initPerfMode();
