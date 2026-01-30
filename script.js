@@ -16,6 +16,7 @@ let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
 const isAdminMode = window.location.pathname.includes('/admin');
+const basePath = isAdminMode ? '../' : '';
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -115,7 +116,7 @@ function sortSongCards() {
 // ===== DATA LOADING =====
 async function loadSongs() {
 	try {
-		const response = await fetch('songs.json');
+		const response = await fetch(`${basePath}songs.json`);
 		songsData = await response.json();
 		renderSongs();
 	} catch (error) {
@@ -208,7 +209,7 @@ function playSong(songId) {
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
-	audioPlayer.src = `music/${song.filename}`;
+	audioPlayer.src = `${basePath}music/${song.filename}`;
 	audioPlayer.play().catch((err) => console.error('Playback error:', err));
 
 	listenCreditSongId = songId;
