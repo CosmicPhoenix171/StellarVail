@@ -84,6 +84,20 @@ audioPlayer.addEventListener('pause', stopStarBoost);
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
+let currentSortMode = 'rating'; // 'rating' or 'date'
+
+function setSortMode(mode) {
+	currentSortMode = mode;
+	
+	// Update button states
+	document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+	const activeBtn = document.getElementById(`sort-${mode}-btn`);
+	if (activeBtn) activeBtn.classList.add('active');
+	
+	// Re-sort immediately
+	sortSongCards();
+}
+
 function debouncedSortSongs() {
 	// Debounce to avoid sorting on every Firebase update
 	if (sortDebounceTimer) clearTimeout(sortDebounceTimer);
@@ -94,19 +108,36 @@ function sortSongCards() {
 	const cards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
 	if (cards.length === 0) return;
 
-	// Sort by rating (desc) then by listens (desc)
 	cards.sort((a, b) => {
 		const idA = a.dataset.songId;
 		const idB = b.dataset.songId;
-		const statsA = songStats[idA] || { rating: 0, listens: 0 };
-		const statsB = songStats[idB] || { rating: 0, listens: 0 };
-
-		// Primary: rating (higher first)
-		if (statsB.rating !== statsA.rating) {
+		
+		if (currentSortMode === 'date') {
+			// Sort by date (newest first)
+			const songA = songsData.find(s => s.id === idA);
+			const songB = songsData.find(s => s.id === idB);
+			const dateA = songA?.dateAdded || '1970-01-01';
+			const dateB = songB?.dateAdded || '1970-01-01';
+			
+			if (dateB !== dateA) {
+				return dateB.localeCompare(dateA);
+			}
+			// Secondary: rating
+			const statsA = songStats[idA] || { rating: 0 };
+			const statsB = songStats[idB] || { rating: 0 };
 			return statsB.rating - statsA.rating;
+		} else {
+			// Sort by rating (default)
+			const statsA = songStats[idA] || { rating: 0, listens: 0 };
+			const statsB = songStats[idB] || { rating: 0, listens: 0 };
+
+			// Primary: rating (higher first)
+			if (statsB.rating !== statsA.rating) {
+				return statsB.rating - statsA.rating;
+			}
+			// Secondary: listens (higher first)
+			return statsB.listens - statsA.listens;
 		}
-		// Secondary: listens (higher first)
-		return statsB.listens - statsA.listens;
 	});
 
 	// Re-append in sorted order (moves existing DOM nodes)
