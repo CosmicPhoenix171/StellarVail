@@ -11,6 +11,8 @@ let analyser = null;
 let dataArray = null;
 let starBoostRaf = null;
 let clientId = getClientId();
+let songStats = {}; // Track rating and listen data for sorting
+let sortDebounceTimer = null;
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -66,6 +68,36 @@ audioPlayer.addEventListener('play', async () => {
 audioPlayer.addEventListener('pause', stopStarBoost);
 audioPlayer.addEventListener('ended', stopStarBoost);
 
+// ===== SONG SORTING =====
+function debouncedSortSongs() {
+	// Debounce to avoid sorting on every Firebase update
+	if (sortDebounceTimer) clearTimeout(sortDebounceTimer);
+	sortDebounceTimer = setTimeout(sortSongCards, 300);
+}
+
+function sortSongCards() {
+	const cards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
+	if (cards.length === 0) return;
+
+	// Sort by rating (desc) then by listens (desc)
+	cards.sort((a, b) => {
+		const idA = a.dataset.songId;
+		const idB = b.dataset.songId;
+		const statsA = songStats[idA] || { rating: 0, listens: 0 };
+		const statsB = songStats[idB] || { rating: 0, listens: 0 };
+
+		// Primary: rating (higher first)
+		if (statsB.rating !== statsA.rating) {
+			return statsB.rating - statsA.rating;
+		}
+		// Secondary: listens (higher first)
+		return statsB.listens - statsA.listens;
+	});
+
+	// Re-append in sorted order (moves existing DOM nodes)
+	cards.forEach(card => songsContainer.appendChild(card));
+}
+
 // ===== DATA LOADING =====
 async function loadSongs() {
 	try {
@@ -88,6 +120,7 @@ function renderSongs() {
 		loadRatingData(song.id);
 		loadListenCount(song.id);
 		loadFeedback(song.id);
+		checkUserHasRated(song.id);
 	});
 }
 
@@ -110,7 +143,7 @@ function createSongCard(song) {
 				<h3>${song.title}</h3>
 			</div>
 			<div class="summary-metrics">
-				<div class="summary-rating">
+				<div class="summary-rating rating-hidden" id="summary-rating-${song.id}">
 					<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
 				</div>
@@ -281,6 +314,10 @@ function loadListenCount(songId) {
 		if (listenElement) {
 			listenElement.textContent = `${count} listen${count === 1 ? '' : 's'}`;
 		}
+		// Track for sorting
+		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
+		songStats[songId].listens = count;
+		debouncedSortSongs();
 	});
 }
 
@@ -370,6 +407,11 @@ function loadRatingData(songId) {
 		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'})`;
 
 		updateStarsDisplay(songId, parseFloat(average));
+		
+		// Track for sorting
+		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
+		songStats[songId].rating = parseFloat(average);
+		debouncedSortSongs();
 	});
 }
 
@@ -382,6 +424,24 @@ function updateStarsDisplay(songId, average) {
 			star.classList.add('filled');
 		} else {
 			star.classList.remove('filled');
+		}
+	});
+}
+
+function revealRating(songId) {
+	const ratingEl = document.getElementById(`summary-rating-${songId}`);
+	if (ratingEl) {
+		ratingEl.classList.remove('rating-hidden');
+	}
+}
+
+function checkUserHasRated(songId) {
+	if (typeof database === 'undefined') return;
+
+	const userRatingRef = database.ref(`songs/${songId}/ratings/${clientId}`);
+	userRatingRef.once('value', (snapshot) => {
+		if (snapshot.exists()) {
+			revealRating(songId);
 		}
 	});
 }
@@ -403,6 +463,8 @@ function rateSong(songId, rating) {
 					messageEl.textContent = 'Click stars to rate';
 				}, 2500);
 			}
+			// Reveal the rating now that user has rated
+			revealRating(songId);
 		})
 		.catch((error) => {
 			console.error('Error saving rating:', error);

@@ -499,6 +499,14 @@ body {
     gap: 6px;
     justify-content: flex-end;
     align-items: baseline;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.summary-rating.rating-hidden {
+    filter: blur(8px);
+    opacity: 0.6;
+    user-select: none;
+    pointer-events: none;
 }
 
 .avg-rating {
