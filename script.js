@@ -341,6 +341,7 @@ function loadListenCount(songId) {
 
 function incrementListenCount(songId) {
 	if (typeof database === 'undefined') return;
+	if (isAdminMode) return; // Don't count listens on admin page
 
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.transaction((currentCount) => (currentCount || 0) + 1);
