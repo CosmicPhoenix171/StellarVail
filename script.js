@@ -6,6 +6,8 @@ let activeCardElement = null;
 let activeCardPlaceholder = null;
 let listenCreditSongId = null;
 let listenCredited = false;
+let listenInvalidated = false; // True if user skipped forward
+let lastPlaybackTime = 0; // Track last known playback position
 let audioCtx = null;
 let analyser = null;
 let dataArray = null;
@@ -13,6 +15,7 @@ let starBoostRaf = null;
 let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
+const isAdminMode = window.location.pathname.includes('/admin');
 
 // DOM references
 const audioPlayer = document.getElementById('audio-player');
@@ -42,9 +45,20 @@ audioPlayer.addEventListener('ended', () => {
 	playNextSong();
 });
 
-// Credit a listen only after 75% of the track is played
+// Detect if user skips forward (seeking ahead invalidates listen credit)
+audioPlayer.addEventListener('seeking', () => {
+	// If seeking forward by more than 2 seconds, invalidate the listen
+	if (audioPlayer.currentTime > lastPlaybackTime + 2) {
+		listenInvalidated = true;
+	}
+});
+
+// Credit a listen only after 75% of the track is played (without skipping)
 audioPlayer.addEventListener('timeupdate', () => {
-	if (!currentSongId || listenCredited === true) return;
+	// Update last known position for skip detection
+	lastPlaybackTime = audioPlayer.currentTime;
+	
+	if (!currentSongId || listenCredited === true || listenInvalidated === true) return;
 
 	const duration = audioPlayer.duration;
 	if (!duration || isNaN(duration) || duration === Infinity) return;
@@ -137,13 +151,14 @@ function createSongCard(song) {
 	const artistHtml = artistIsPlaceholder ? '' : `<p class="artist">${song.artist}</p>`;
 	const descriptionHtml = descriptionIsPlaceholder ? '' : `<p class="description">${song.description}</p>`;
 	const detailHeaderHtml = artistHtml || descriptionHtml ? `<div class="detail-header">${artistHtml}${descriptionHtml}</div>` : '';
+	const ratingHiddenClass = isAdminMode ? '' : 'rating-hidden';
 	card.innerHTML = `
 		<div class="song-summary">
 			<div class="summary-info">
 				<h3>${song.title}</h3>
 			</div>
 			<div class="summary-metrics">
-				<div class="summary-rating rating-hidden" id="summary-rating-${song.id}">
+				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${song.id}">
 					<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
 				</div>
@@ -198,6 +213,8 @@ function playSong(songId) {
 
 	listenCreditSongId = songId;
 	listenCredited = false;
+	listenInvalidated = false; // Reset skip detection for new song
+	lastPlaybackTime = 0; // Reset playback position tracker
 	updateNowPlayingCard(song);
 
 	document.querySelectorAll('.play-button').forEach((btn) => {

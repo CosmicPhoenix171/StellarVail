@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StellarVail - Admin View</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="aurora-sky" aria-hidden="true">
+        <div class="aurora-wave wave-primary"></div>
+        <div class="aurora-wave wave-secondary"></div>
+        <div class="aurora-wave wave-tertiary"></div>
+        <div class="aurora-stars"></div>
+        <div class="aurora-stars-2"></div>
+        <div class="aurora-star-variants"></div>
+        <div class="aurora-noise"></div>
+    </div>
+    <div class="app-shell">
+        <div class="content-column">
+            <main class="main-content">
+                <header class="top-bar">
+                    <div class="brand-inline">
+                        <h1>Stellar Vail</h1>
+                        <p>Admin View - All Ratings Visible</p>
+                    </div>
+                    <div class="user-pill">
+                        <span class="status-dot" style="background: #ff00ff; box-shadow: 0 0 8px #ff00ff;"></span>
+                        <span>Admin</span>
+                    </div>
+                </header>
+            </main>
+
+            <section class="songs-grid" id="songs-container">
+                <!-- Songs will be dynamically loaded here -->
+            </section>
+        </div>
+
+        <aside class="now-playing-panel">
+            <div class="panel-header">
+                <h3>Now Playing</h3>
+                <div class="panel-controls">
+                    <button id="random-btn" onclick="playRandomSong()" title="Surprise me">🎲 Surprise Me</button>
+                    <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">🔀 Shuffle: OFF</button>
+                </div>
+            </div>
+            <div id="now-playing-card" class="now-playing-card">
+                <p class="no-song-playing">Select a song to play</p>
+            </div>
+        </aside>
+
+        <footer class="player-bar">
+            <audio id="audio-player" controls controlsList="nodownload" oncontextmenu="return false;"></audio>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="../firebase-config.js"></script>
+    <script src="../script.js"></script>
+</body>
+</html>
