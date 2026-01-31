@@ -363,19 +363,25 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 999px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .sort-label {
-    color: var(--text-muted);
+    color: var(--text-main);
     font-size: 0.9em;
+    font-weight: 500;
 }
 
 .sort-btn {
     padding: 8px 16px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-main);
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s;
@@ -383,13 +389,15 @@ body {
 
 .sort-btn:hover {
     border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.15);
     color: var(--text-main);
 }
 
 .sort-btn.active {
-    background: linear-gradient(135deg, rgba(189, 0, 255, 0.3), rgba(0, 243, 255, 0.2));
+    background: linear-gradient(135deg, rgba(189, 0, 255, 0.4), rgba(0, 243, 255, 0.3));
     border-color: var(--accent);
     color: var(--text-main);
+    font-weight: 500;
 }
 
 .user-pill {
@@ -478,7 +486,7 @@ body {
 }
 
 .song-card {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.35);
     border-radius: 20px;
     padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -491,7 +499,7 @@ body {
 }
 .song-card:hover {
     transform: translateY(-6px);
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.45);
     border-color: var(--accent);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 243, 255, 0.2);
     backdrop-filter: blur(24px);
@@ -500,7 +508,7 @@ body {
 .song-card.in-now-playing {
     border-color: var(--accent-2);
     box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-    background: linear-gradient(145deg, rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.6));
+    background: linear-gradient(145deg, rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.45));
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
 }
