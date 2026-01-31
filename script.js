@@ -153,6 +153,29 @@ function sortSongCards() {
 }
 
 // ===== DATA LOADING =====
+
+// Legacy ID mapping - maps filename to old Firebase ID to preserve ratings/listens
+const legacyIdMap = {
+	'Tik.wav': 'song1',
+	'before morning rise.wav': 'song2',
+	'Broken.wav': 'song3',
+	'1 Unread.wav': 'song4',
+	'burn-it.wav': 'song5',
+	'Chemical Beat.wav': 'song6',
+	'Demons.wav': 'song8',
+	'Dream escape.wav': 'song9',
+	'Emotion.wav': 'song10',
+	'fantasy or reality.wav': 'song11',
+	'Feel.wav': 'song12',
+	'Hide Away.wav': 'song13',
+	'Laser Fury.wav': 'song14',
+	'midnight Ride.wav': 'song15',
+	'Neon Riff.wav': 'song16',
+	'Not enough.wav': 'song17',
+	'Villain.wav': 'song18',
+	'where.wav': 'song19'
+};
+
 async function loadSongs() {
 	try {
 		const response = await fetch(`${basePath}songs.json`);
@@ -168,8 +191,10 @@ async function loadSongs() {
 				const baseName = song.filename.replace(/\.wav$/i, '');
 				// Remove characters not allowed in Firebase paths: . # $ [ ]
 				const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]]/g, '');
+				// Use legacy ID if available to preserve Firebase data
+				const id = song.id || legacyIdMap[song.filename] || safeId;
 				return {
-					id: song.id || safeId,
+					id: id,
 					title: song.title || baseName,
 					filename: song.filename,
 					dateAdded: song.dateAdded || today
