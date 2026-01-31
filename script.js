@@ -92,7 +92,7 @@ audioPlayer.addEventListener('pause', stopStarBoost);
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
-let currentSortMode = 'rating'; // 'rating' or 'date'
+let currentSortMode = 'date'; // 'rating' or 'date'
 
 function setSortMode(mode) {
 	currentSortMode = mode;
@@ -166,8 +166,10 @@ async function loadSongs() {
 			.filter(song => song.filename && song.filename !== '.wav') // Skip empty entries
 			.map(song => {
 				const baseName = song.filename.replace(/\.wav$/i, '');
+				// Remove characters not allowed in Firebase paths: . # $ [ ]
+				const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]]/g, '');
 				return {
-					id: song.id || baseName.toLowerCase().replace(/\s+/g, '-'),
+					id: song.id || safeId,
 					title: song.title || baseName,
 					filename: song.filename,
 					dateAdded: song.dateAdded || today
