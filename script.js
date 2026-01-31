@@ -86,9 +86,16 @@ audioPlayer.addEventListener('play', async () => {
 	} catch (err) {
 		console.warn('Audio analyser unavailable:', err);
 	}
+	// Update play button to show Pause
+	if (currentSongId) updatePlayButton(currentSongId, true);
 });
 
-audioPlayer.addEventListener('pause', stopStarBoost);
+audioPlayer.addEventListener('pause', () => {
+	stopStarBoost();
+	// Update play button to show Resume
+	if (currentSongId) updatePlayButton(currentSongId, false);
+});
+
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
@@ -220,6 +227,9 @@ function renderSongs() {
 		loadFeedback(song.id);
 		checkUserHasRated(song.id);
 	});
+	
+	// Sort immediately after render (especially for date sorting)
+	sortSongCards();
 }
 
 function createSongCard(song) {
@@ -255,7 +265,7 @@ function createSongCard(song) {
 				<span class="listen-count" id="listen-count-${song.id}">0 listens</span>
 			</div>
 		</div>
-		<button class="play-button" onclick="playSong('${song.id}')" data-song-id="${song.id}">
+		<button class="play-button" onclick="togglePlaySong('${song.id}')" data-song-id="${song.id}">
 			▶ Play
 		</button>
 		<div class="detail-section">
@@ -292,6 +302,36 @@ function createSongCard(song) {
 }
 
 // ===== PLAYBACK CONTROLS =====
+function togglePlaySong(songId) {
+	// If this is the current song, toggle play/pause
+	if (currentSongId === songId) {
+		if (audioPlayer.paused) {
+			audioPlayer.play().catch((err) => console.error('Playback error:', err));
+			updatePlayButton(songId, true);
+		} else {
+			audioPlayer.pause();
+			updatePlayButton(songId, false);
+		}
+		return;
+	}
+	
+	// Otherwise, play the new song
+	playSong(songId);
+}
+
+function updatePlayButton(songId, isPlaying) {
+	const button = document.querySelector(`button[data-song-id="${songId}"]`);
+	if (button) {
+		if (isPlaying) {
+			button.classList.add('playing');
+			button.textContent = '⏸ Pause';
+		} else {
+			button.classList.add('playing'); // Keep playing class to show it's the current song
+			button.textContent = '▶ Resume';
+		}
+	}
+}
+
 function playSong(songId) {
 	const song = songsData.find((s) => s.id === songId);
 	if (!song) return;
@@ -315,7 +355,7 @@ function playSong(songId) {
 	const currentButton = document.querySelector(`button[data-song-id="${songId}"]`);
 	if (currentButton) {
 		currentButton.classList.add('playing');
-		currentButton.textContent = '⏸ Playing';
+		currentButton.textContent = '⏸ Pause';
 	}
 
 	currentSongId = songId;
