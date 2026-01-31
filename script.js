@@ -124,11 +124,11 @@ function sortSongCards() {
 			// Sort by date (newest first)
 			const songA = songsData.find(s => s.id === idA);
 			const songB = songsData.find(s => s.id === idB);
-			const dateA = songA?.dateAdded || '1970-01-01';
-			const dateB = songB?.dateAdded || '1970-01-01';
+			const dateA = songA?.dateAdded ? new Date(songA.dateAdded).getTime() : 0;
+			const dateB = songB?.dateAdded ? new Date(songB.dateAdded).getTime() : 0;
 			
 			if (dateB !== dateA) {
-				return dateB.localeCompare(dateA);
+				return dateB - dateA;
 			}
 			// Secondary: rating
 			const statsA = songStats[idA] || { rating: 0 };
