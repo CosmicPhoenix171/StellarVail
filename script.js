@@ -413,9 +413,15 @@ function playNextSong() {
 		return;
 	}
 
-	// Get sorted order from DOM (reflects rating/listens sorting)
-	const sortedCards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
-	const sortedIds = sortedCards.map(card => card.dataset.songId);
+	// Get sorted order from DOM - include placeholder cards to find current song's position
+	const allCards = Array.from(songsContainer.querySelectorAll('.song-card'));
+	// Map to song IDs - for placeholder, use the active card's ID
+	const sortedIds = allCards.map(card => {
+		if (card.classList.contains('placeholder-card') && activeCardElement) {
+			return activeCardElement.dataset.songId;
+		}
+		return card.dataset.songId;
+	});
 	
 	const currentIndex = sortedIds.indexOf(currentSongId);
 	const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % sortedIds.length;
