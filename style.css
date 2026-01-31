@@ -478,31 +478,31 @@ body {
 }
 
 .song-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 20px;
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     flex-direction: column;
     gap: 12px;
     transition: all 0.3s ease;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 .song-card:hover {
     transform: translateY(-6px);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.6);
     border-color: var(--accent);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 243, 255, 0.2);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
 }
 .song-card.in-now-playing {
     border-color: var(--accent-2);
     box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-    background: linear-gradient(145deg, rgba(255, 0, 255, 0.08), rgba(0, 0, 0, 0.2));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: linear-gradient(145deg, rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.6));
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
 }
 
 .song-summary {
