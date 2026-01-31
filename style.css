@@ -35,10 +35,8 @@ body {
     overflow: hidden;
     z-index: -5;
     pointer-events: none;
-    background:
-        radial-gradient(circle at 15% 20%, rgba(100, 0, 255, 0.15), transparent 40%),
-        radial-gradient(circle at 85% 12%, rgba(0, 243, 255, 0.1), transparent 45%),
-        linear-gradient(170deg, rgba(5, 0, 10, 0.95) 0%, rgba(15, 5, 30, 0.9) 32%, rgba(2, 0, 5, 1) 75%);
+    background: url('Steller.png') no-repeat center center;
+    background-size: cover;
     contain: strict;
     isolation: isolate;
     transform: translateZ(0);
