@@ -1,116 +1,73 @@
 [
-    {
-        "id":  "song1",
-        "title":  "Tik",
-        "filename":  "Tik.wav",
-        "dateAdded":  "December 5, 2025"
-    },
-    {
-        "id":  "song2",
-        "title":  "Before morning rise",
-        "filename":  "before morning rise.wav",
-        "dateAdded":  "October 8, 2025"
-    },
-    {
-        "id":  "song3",
-        "title":  "Broken",
-        "filename":  "Broken.wav",
-        "dateAdded":  "August 12, 2025"
-    },
-    {
-        "id":  "song4",
-        "title":  "1 Unread",
-        "filename":  "1 Unread.wav",
-        "dateAdded":  "August 14, 2025"
-    },
-    {
-        "id":  "song5",
-        "title":  "burn-it",
-        "filename":  "burn-it.wav",
-        "dateAdded":  "August 16, 2025"
-    },
-    {
-        "id":  "song6",
-        "title":  "Chemical Beat",
-        "filename":  "Chemical  Beat.wav",
-        "dateAdded":  "July 4, 2025"
-    },
-    {
-        "id":  "song7",
-        "title":  "Demon in Disguise",
-        "filename":  "Demon in Disguise.wav",
-        "dateAdded":  "September 26, 2025"
-    },
-    {
-        "id":  "song8",
-        "title":  "Demons",
-        "filename":  "Demons.wav",
-        "dateAdded":  "August 11, 2025"
-    },
-    {
-        "id":  "song9",
-        "title":  "Dream escape",
-        "filename":  "Dream escape.wav",
-        "dateAdded":  "August 5, 2025"
-    },
-    {
-        "id":  "song10",
-        "title":  "Emotion",
-        "filename":  "Emotion.wav",
-        "dateAdded":  "September 26, 2025"
-    },
-    {
-        "id":  "song11",
-        "title":  "fantasy or reality",
-        "filename":  "fantasy or reality.wav",
-        "dateAdded":  "July 29, 2025"
-    },
-    {
-        "id":  "song12",
-        "title":  "Feel",
-        "filename":  "Feel.wav",
-        "dateAdded":  "2026-01-30"
-    },
-    {
-        "id":  "song13",
-        "title":  "Hide Away",
-        "filename":  "Hide Away.wav",
-        "dateAdded":  "July 15, 2025"
-    },
-    {
-        "id":  "song14",
-        "title":  "Laser Fury",
-        "filename":  "Laser Fury.wav",
-        "dateAdded":  "2026-01-30"
-    },
-    {
-        "id":  "song15",
-        "title":  "midnight Ride",
-        "filename":  "midnight Ride.wav",
-        "dateAdded":  "2026-01-30"
-    },
-    {
-        "id":  "song16",
-        "title":  "Neon Riff",
-        "filename":  "Neon Riff.wav",
-        "dateAdded":  "August 14, 2025"
-    },
-    {
-        "id":  "song17",
-        "title":  "Not enough",
-        "filename":  "Not enough.wav",
-        "dateAdded":  "October 23, 2025"
-    },
-    {
-        "id":  "song18",
-        "title":  "Villain",
-        "filename":  "Villain.wav",
-        "dateAdded":  "July 29, 2025"
-    },
-    {
-        "id":  "song19",
-        "title":  "where",
-        "filename":  "where.wav",
-        "dateAdded":  "September 26, 2025"
-    }
+    {   "id": "song1",
+        "filename": "Tik.wav",
+        "dateAdded": "December 5, 2025"},
+
+    {   "id": "song2",
+        "filename": "before morning rise.wav",
+        "dateAdded": "October 8, 2025"},
+
+    {   "id": "song3",
+        "filename": "Broken.wav",
+        "dateAdded": "August 12, 2025"},
+
+    {   "id": "song4",
+        "filename": "1 Unread.wav",
+        "dateAdded": "August 14, 2025"},
+
+    {   "id": "song5",
+        "filename": "burn-it.wav",
+        "dateAdded": "August 16, 2025"},
+
+    {   "id": "song6",
+        "filename": "Chemical Beat.wav",
+        "dateAdded": "July 4, 2025"},
+
+    {   "id": "song8",
+        "filename": "Demons.wav",
+        "dateAdded": "August 11, 2025"},
+
+    {   "id": "song9",
+        "filename": "Dream escape.wav",
+        "dateAdded": "August 5, 2025"},
+
+    {   "id": "song10",
+        "filename": "Emotion.wav",
+        "dateAdded": "September 26, 2025"},
+
+    {   "id": "song11",
+        "filename": "fantasy or reality.wav",
+        "dateAdded": "July 29, 2025"},
+
+    {   "id": "song12",
+        "filename": "Feel.wav",
+        "dateAdded": "January 30, 2026"},
+
+    {   "id": "song13",
+        "filename": "Hide Away.wav",
+        "dateAdded": "July 15, 2025"},
+
+    {   "id": "song14",
+        "filename": "Laser Fury.wav",
+        "dateAdded": "January 30, 2026"},
+
+    {   "id": "song15",
+        "filename": "midnight Ride.wav",
+        "dateAdded": "January 30, 2026"},
+
+    {   "id": "song16",
+        "filename": "Neon Riff.wav",
+        "dateAdded": "August 14, 2025"},
+
+    {   "id": "song17",
+        "filename": "Not enough.wav",
+        "dateAdded": "October 23, 2025"},
+
+    {   "id": "song18",
+        "filename": "Villain.wav",
+        "dateAdded": "July 29, 2025"},
+
+    {   "id": "song19",
+        "filename": "where.wav",
+        "dateAdded": "September 26, 2025"}
 ]

@@ -156,7 +156,24 @@ function sortSongCards() {
 async function loadSongs() {
 	try {
 		const response = await fetch(`${basePath}songs.json`);
-		songsData = await response.json();
+		const songs = await response.json();
+		
+		// Get today's date for songs without dateAdded
+		const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+		
+		// Auto-generate id, title, and date from filename
+		songsData = songs
+			.filter(song => song.filename && song.filename !== '.wav') // Skip empty entries
+			.map(song => {
+				const baseName = song.filename.replace(/\.wav$/i, '');
+				return {
+					id: song.id || baseName.toLowerCase().replace(/\s+/g, '-'),
+					title: song.title || baseName,
+					filename: song.filename,
+					dateAdded: song.dateAdded || today
+				};
+			});
+		
 		renderSongs();
 	} catch (error) {
 		console.error('Error loading songs:', error);
