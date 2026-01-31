@@ -168,7 +168,7 @@ const legacyIdMap = {
 	'Broken.wav': 'song3',
 	'1 Unread.wav': 'song4',
 	'burn-it.wav': 'song5',
-	'Chemical Beat.wav': 'song6',
+	'Chemical  Beat.wav': 'song6',
 	'Demons.wav': 'song8',
 	'Dream escape.wav': 'song9',
 	'Emotion.wav': 'song10',
@@ -196,8 +196,8 @@ async function loadSongs() {
 			.filter(song => song.filename && song.filename !== '.wav') // Skip empty entries
 			.map(song => {
 				const baseName = song.filename.replace(/\.wav$/i, '');
-				// Remove characters not allowed in Firebase paths: . # $ [ ]
-				const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]]/g, '');
+				// Remove characters not allowed in Firebase paths or that break HTML/JS: . # $ [ ] ' "
+				const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
 				// Use legacy ID if available to preserve Firebase data
 				const id = song.id || legacyIdMap[song.filename] || safeId;
 				return {
