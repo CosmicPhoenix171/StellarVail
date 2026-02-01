@@ -957,9 +957,11 @@ function animateStarfield() {
 	const centerX = canvas.width / 2;
 	const centerY = canvas.height / 2;
 	
+	// Check if audio is playing
+	const isPlaying = currentAudio && !currentAudio.paused;
+	
 	// Get current beat intensity from CSS variable
 	const boost = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--star-boost')) || 0;
-	const speed = BASE_SPEED + (boost * BEAT_SPEED_MULTIPLIER);
 	
 	// Clear canvas completely (transparent so background shows through)
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -968,23 +970,27 @@ function animateStarfield() {
 	for (let i = 0; i < stars.length; i++) {
 		const star = stars[i];
 		
-		// Speed increases as star gets closer (perspective acceleration)
-		const depthFactor = 1 + (1000 - star.z) / 300;
-		const moveSpeed = speed * depthFactor;
-		
-		// Move star outward using stored velocity direction
-		star.x += star.vx * moveSpeed * 3;
-		star.y += star.vy * moveSpeed * 3;
-		star.z -= moveSpeed * 5; // Come closer faster
-		star.twinkle += 0.1;
-		
-		// Check if star is off screen or too close
-		if (star.x < -50 || star.x > canvas.width + 50 || 
-		    star.y < -50 || star.y > canvas.height + 50 || 
-		    star.z < 0) {
-			// Respawn from center
-			stars[i] = createStar(true);
-			continue;
+		// Only move stars when music is playing
+		if (isPlaying) {
+			const speed = BASE_SPEED + (boost * BEAT_SPEED_MULTIPLIER);
+			// Speed increases as star gets closer (perspective acceleration)
+			const depthFactor = 1 + (1000 - star.z) / 300;
+			const moveSpeed = speed * depthFactor;
+			
+			// Move star outward using stored velocity direction
+			star.x += star.vx * moveSpeed * 3;
+			star.y += star.vy * moveSpeed * 3;
+			star.z -= moveSpeed * 5; // Come closer faster
+			star.twinkle += 0.1;
+			
+			// Check if star is off screen or too close
+			if (star.x < -50 || star.x > canvas.width + 50 || 
+			    star.y < -50 || star.y > canvas.height + 50 || 
+			    star.z < 0) {
+				// Respawn from center
+				stars[i] = createStar(true);
+				continue;
+			}
 		}
 		
 		// Calculate size based on depth (closer = bigger)
