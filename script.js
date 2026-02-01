@@ -1049,19 +1049,72 @@ function handleLogin() {
 		return;
 	}
 	
+	// Get the old guest ID before switching
+	const oldGuestId = localStorage.getItem('sv_client_id');
+	const newUserId = `user_${sanitizeUsername(username)}`;
+	
 	// Save username and update clientId
 	localStorage.setItem('sv_username', username);
 	clientId = getClientId(); // Refresh clientId with new username
 	
-	statusEl.textContent = `Signed in as ${username}!`;
+	statusEl.textContent = 'Signing in...';
 	statusEl.classList.remove('error');
 	
-	updateUserDisplay();
+	// Transfer guest ratings to the new user account
+	if (oldGuestId && typeof database !== 'undefined') {
+		transferGuestRatings(oldGuestId, newUserId, () => {
+			statusEl.textContent = `Signed in as ${username}!`;
+			updateUserDisplay();
+			setTimeout(() => hideLoginPopup(), 1000);
+		});
+	} else {
+		statusEl.textContent = `Signed in as ${username}!`;
+		updateUserDisplay();
+		setTimeout(() => hideLoginPopup(), 1000);
+	}
+}
+
+// Transfer ratings from guest account to user account
+function transferGuestRatings(oldGuestId, newUserId, callback) {
+	const songsRef = database.ref('songs');
 	
-	// Close popup after a brief delay
-	setTimeout(() => {
-		hideLoginPopup();
-	}, 1000);
+	songsRef.once('value', (snapshot) => {
+		const songs = snapshot.val();
+		if (!songs) {
+			callback();
+			return;
+		}
+		
+		const updates = {};
+		let transferCount = 0;
+		
+		// Look through all songs for ratings from the old guest ID
+		Object.keys(songs).forEach(songId => {
+			const song = songs[songId];
+			if (song.ratings && song.ratings[oldGuestId]) {
+				// Check if user doesn't already have a rating for this song
+				if (!song.ratings[newUserId]) {
+					// Copy the guest rating to the user account
+					updates[`songs/${songId}/ratings/${newUserId}`] = song.ratings[oldGuestId];
+					transferCount++;
+				}
+			}
+		});
+		
+		if (Object.keys(updates).length > 0) {
+			database.ref().update(updates)
+				.then(() => {
+					console.log(`Transferred ${transferCount} ratings to new account`);
+					callback();
+				})
+				.catch((err) => {
+					console.error('Error transferring ratings:', err);
+					callback();
+				});
+		} else {
+			callback();
+		}
+	});
 }
 
 function handleLogout() {
