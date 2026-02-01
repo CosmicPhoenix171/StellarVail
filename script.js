@@ -81,9 +81,9 @@ document.addEventListener('keydown', (event) => {
 // Track if current song has been rated this session
 let currentSongRated = false;
 
-// Autoplay next track when one finishes (if rated)
+// Autoplay next track when one finishes (if rated, or if admin)
 audioPlayer.addEventListener('ended', () => {
-	if (currentSongRated) {
+	if (isAdminMode || currentSongRated) {
 		playNextSong();
 	} else {
 		showRatingPopup();
