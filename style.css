@@ -579,13 +579,32 @@ body {
 }
 
 .comment-count {
-    font-size: 0.85em;
-    color: var(--accent);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    transition: transform 0.2s ease;
 }
 
 .comment-count:hover {
-    text-decoration: underline;
+    transform: scale(1.1);
+}
+
+.comment-bubble {
+    width: 28px;
+    height: 28px;
+    color: var(--accent);
+}
+
+.comment-number {
+    position: absolute;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: var(--accent);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
 }
 
 .song-card.placeholder-card {

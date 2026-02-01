@@ -299,7 +299,12 @@ function createSongCard(song) {
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
 				</div>
 				<span class="listen-count" id="listen-count-${song.id}">0 listens</span>
-				<span class="comment-count" id="comment-count-${song.id}" title="Comments">💬 0</span>
+				<span class="comment-count" id="comment-count-${song.id}" title="Comments" onclick="toggleFeedback('${song.id}')">
+					<svg class="comment-bubble" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+					</svg>
+					<span class="comment-number">0</span>
+				</span>
 			</div>
 		</div>
 		<button class="play-button" onclick="togglePlaySong('${song.id}')" data-song-id="${song.id}">
@@ -787,7 +792,10 @@ function loadFeedback(songId) {
 		
 		// Update comment count in card header
 		if (commentCountEl) {
-			commentCountEl.textContent = `💬 ${commentCount}`;
+			const numberEl = commentCountEl.querySelector('.comment-number');
+			if (numberEl) {
+				numberEl.textContent = commentCount;
+			}
 		}
 		
 		if (!feedbackList) return;
