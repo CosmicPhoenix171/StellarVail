@@ -543,14 +543,14 @@ body {
 .summary-metrics {
     text-align: right;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
 }
 
 .summary-rating {
     display: flex;
     gap: 6px;
-    justify-content: flex-end;
     align-items: baseline;
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
@@ -563,19 +563,22 @@ body {
 }
 
 .avg-rating {
-    font-size: 1.2em;
-    color: var(--accent);
-    text-shadow: 0 0 10px var(--accent);
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #ffd700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .rating-count {
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: var(--text-muted);
+    white-space: nowrap;
 }
 
 .listen-count {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: var(--accent-2);
+    white-space: nowrap;
 }
 
 .comment-count {
@@ -585,24 +588,25 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: transform 0.2s ease;
+    margin-left: 4px;
 }
 
 .comment-count:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .comment-bubble {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     color: var(--accent);
 }
 
 .comment-number {
     position: absolute;
-    font-size: 0.7em;
-    font-weight: 600;
+    font-size: 0.6em;
+    font-weight: 700;
     color: var(--accent);
-    top: 50%;
+    top: 48%;
     left: 50%;
     transform: translate(-50%, -55%);
 }
