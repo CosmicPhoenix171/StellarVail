@@ -932,16 +932,18 @@ function createStar(fromCenter = false) {
 	const centerX = canvas.width / 2;
 	const centerY = canvas.height / 2;
 	
-	// Random angle from center
+	// Random angle from center - this determines direction of travel
 	const angle = Math.random() * Math.PI * 2;
-	// Start distance - either from center (new stars) or random (initial)
-	const startDist = fromCenter ? 0 : Math.random() * Math.max(canvas.width, canvas.height) / 2;
+	// Start distance - new stars start near center, initial stars are spread out
+	// Always start at least a tiny bit away so they have a direction
+	const startDist = fromCenter ? (5 + Math.random() * 20) : Math.random() * Math.max(canvas.width, canvas.height) / 2;
 	
 	return {
 		x: centerX + Math.cos(angle) * startDist,
 		y: centerY + Math.sin(angle) * startDist,
-		z: Math.random() * 1000, // Depth (affects size and speed)
-		angle: angle,
+		z: fromCenter ? 1000 : Math.random() * 1000, // New stars start far away
+		vx: Math.cos(angle), // Store velocity direction
+		vy: Math.sin(angle),
 		colorIndex: Math.floor(Math.random() * starColors.length),
 		twinkle: Math.random() * Math.PI * 2, // Phase for twinkling
 	};
@@ -959,26 +961,21 @@ function animateStarfield() {
 	const boost = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--star-boost')) || 0;
 	const speed = BASE_SPEED + (boost * BEAT_SPEED_MULTIPLIER);
 	
-	// Clear canvas with slight fade for trail effect
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	// Clear canvas completely (transparent so background shows through)
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
 	// Update and draw stars
 	for (let i = 0; i < stars.length; i++) {
 		const star = stars[i];
 		
-		// Move star outward from center (traveling through space effect)
-		const dx = star.x - centerX;
-		const dy = star.y - centerY;
-		const dist = Math.sqrt(dx * dx + dy * dy);
-		
-		// Speed increases as star gets further (perspective)
-		const depthFactor = 1 + (1000 - star.z) / 500;
+		// Speed increases as star gets closer (perspective acceleration)
+		const depthFactor = 1 + (1000 - star.z) / 300;
 		const moveSpeed = speed * depthFactor;
 		
-		star.x += (dx / (dist || 1)) * moveSpeed;
-		star.y += (dy / (dist || 1)) * moveSpeed;
-		star.z -= moveSpeed * 2; // Come closer
+		// Move star outward using stored velocity direction
+		star.x += star.vx * moveSpeed * 3;
+		star.y += star.vy * moveSpeed * 3;
+		star.z -= moveSpeed * 5; // Come closer faster
 		star.twinkle += 0.1;
 		
 		// Check if star is off screen or too close
