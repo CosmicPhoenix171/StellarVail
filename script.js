@@ -964,13 +964,12 @@ function createStar(fromCenter = false) {
 	// Random angle from center - this determines direction of travel
 	const angle = Math.random() * Math.PI * 2;
 	// Start distance - new stars start near center, initial stars are spread out
-	// Always start at least a tiny bit away so they have a direction
-	const startDist = fromCenter ? (5 + Math.random() * 20) : Math.random() * Math.max(canvas.width, canvas.height) / 2;
+	const startDist = fromCenter ? (5 + Math.random() * 30) : Math.random() * Math.max(canvas.width, canvas.height) / 2;
 	
 	return {
 		x: centerX + Math.cos(angle) * startDist,
 		y: centerY + Math.sin(angle) * startDist,
-		z: fromCenter ? 1000 : Math.random() * 1000, // New stars start far away
+		z: fromCenter ? (600 + Math.random() * 400) : Math.random() * 1000, // New stars start medium-far
 		vx: Math.cos(angle), // Store velocity direction
 		vy: Math.sin(angle),
 		colorIndex: Math.floor(Math.random() * starColors.length),
