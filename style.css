@@ -14,6 +14,14 @@
     --star-boost: 0;
 }
 
+#starfield {
+    position: fixed;
+    inset: 0;
+    z-index: -4;
+    pointer-events: none;
+    background: transparent;
+}
+
 * {
     margin: 0;
     padding: 0;

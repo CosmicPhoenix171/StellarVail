@@ -890,6 +890,149 @@ function initPerfMode() {
 	requestAnimationFrame(measureFPS);
 }
 
+// ===== STARFIELD (TRAVELING THROUGH SPACE) =====
+const starfieldCanvas = document.getElementById('starfield');
+const starfieldCtx = starfieldCanvas ? starfieldCanvas.getContext('2d') : null;
+let stars = [];
+const STAR_COUNT = 200;
+const BASE_SPEED = 0.5;
+const BEAT_SPEED_MULTIPLIER = 8;
+
+// Star colors that shift with the beat
+const starColors = [
+	{ r: 255, g: 255, b: 255 },  // White
+	{ r: 0, g: 243, b: 255 },    // Cyan
+	{ r: 189, g: 0, b: 255 },    // Purple
+	{ r: 255, g: 0, b: 255 },    // Magenta
+	{ r: 255, g: 200, b: 255 },  // Pink-white
+];
+
+function initStarfield() {
+	if (!starfieldCanvas || !starfieldCtx) return;
+	
+	resizeStarfield();
+	window.addEventListener('resize', resizeStarfield);
+	
+	// Initialize stars
+	for (let i = 0; i < STAR_COUNT; i++) {
+		stars.push(createStar());
+	}
+	
+	animateStarfield();
+}
+
+function resizeStarfield() {
+	if (!starfieldCanvas) return;
+	starfieldCanvas.width = window.innerWidth;
+	starfieldCanvas.height = window.innerHeight;
+}
+
+function createStar(fromCenter = false) {
+	const canvas = starfieldCanvas;
+	const centerX = canvas.width / 2;
+	const centerY = canvas.height / 2;
+	
+	// Random angle from center
+	const angle = Math.random() * Math.PI * 2;
+	// Start distance - either from center (new stars) or random (initial)
+	const startDist = fromCenter ? 0 : Math.random() * Math.max(canvas.width, canvas.height) / 2;
+	
+	return {
+		x: centerX + Math.cos(angle) * startDist,
+		y: centerY + Math.sin(angle) * startDist,
+		z: Math.random() * 1000, // Depth (affects size and speed)
+		angle: angle,
+		colorIndex: Math.floor(Math.random() * starColors.length),
+		twinkle: Math.random() * Math.PI * 2, // Phase for twinkling
+	};
+}
+
+function animateStarfield() {
+	if (!starfieldCanvas || !starfieldCtx) return;
+	
+	const ctx = starfieldCtx;
+	const canvas = starfieldCanvas;
+	const centerX = canvas.width / 2;
+	const centerY = canvas.height / 2;
+	
+	// Get current beat intensity from CSS variable
+	const boost = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--star-boost')) || 0;
+	const speed = BASE_SPEED + (boost * BEAT_SPEED_MULTIPLIER);
+	
+	// Clear canvas with slight fade for trail effect
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	
+	// Update and draw stars
+	for (let i = 0; i < stars.length; i++) {
+		const star = stars[i];
+		
+		// Move star outward from center (traveling through space effect)
+		const dx = star.x - centerX;
+		const dy = star.y - centerY;
+		const dist = Math.sqrt(dx * dx + dy * dy);
+		
+		// Speed increases as star gets further (perspective)
+		const depthFactor = 1 + (1000 - star.z) / 500;
+		const moveSpeed = speed * depthFactor;
+		
+		star.x += (dx / (dist || 1)) * moveSpeed;
+		star.y += (dy / (dist || 1)) * moveSpeed;
+		star.z -= moveSpeed * 2; // Come closer
+		star.twinkle += 0.1;
+		
+		// Check if star is off screen or too close
+		if (star.x < -50 || star.x > canvas.width + 50 || 
+		    star.y < -50 || star.y > canvas.height + 50 || 
+		    star.z < 0) {
+			// Respawn from center
+			stars[i] = createStar(true);
+			continue;
+		}
+		
+		// Calculate size based on depth (closer = bigger)
+		const size = Math.max(0.5, (1000 - star.z) / 200);
+		
+		// Twinkle effect
+		const twinkle = 0.5 + Math.sin(star.twinkle) * 0.5;
+		
+		// Color shift with beat
+		const colorShift = boost * 0.5;
+		const colorIdx1 = star.colorIndex;
+		const colorIdx2 = (star.colorIndex + 1) % starColors.length;
+		const c1 = starColors[colorIdx1];
+		const c2 = starColors[colorIdx2];
+		
+		const r = Math.round(c1.r + (c2.r - c1.r) * colorShift);
+		const g = Math.round(c1.g + (c2.g - c1.g) * colorShift);
+		const b = Math.round(c1.b + (c2.b - c1.b) * colorShift);
+		
+		// Draw star with glow
+		const alpha = twinkle * (0.6 + boost * 0.4);
+		
+		// Outer glow
+		const glowSize = size * (2 + boost * 2);
+		const gradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, glowSize);
+		gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+		gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, ${alpha * 0.3})`);
+		gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+		
+		ctx.beginPath();
+		ctx.arc(star.x, star.y, glowSize, 0, Math.PI * 2);
+		ctx.fillStyle = gradient;
+		ctx.fill();
+		
+		// Core
+		ctx.beginPath();
+		ctx.arc(star.x, star.y, size, 0, Math.PI * 2);
+		ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+		ctx.fill();
+	}
+	
+	requestAnimationFrame(animateStarfield);
+}
+
 // Initialize
 loadSongs();
 initPerfMode();
+initStarfield();
