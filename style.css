@@ -1004,3 +1004,98 @@ body.low-perf-mode .player-bar {
 body.low-perf-mode .song-card:hover {
     backdrop-filter: none;
 }
+
+/* Rating Popup Modal */
+.rating-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.rating-popup-modal {
+    background: linear-gradient(135deg, rgba(30, 15, 50, 0.95), rgba(10, 5, 20, 0.95));
+    border: 1px solid rgba(189, 0, 255, 0.3);
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(189, 0, 255, 0.2);
+    animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.rating-popup-modal h2 {
+    color: var(--text-main);
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    text-shadow: var(--glow-text);
+}
+
+.rating-popup-song {
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+.rating-popup-stars {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.popup-star {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.popup-star:hover,
+.popup-star.hovered {
+    color: #ffd700;
+    transform: scale(1.2);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+.popup-star.selected {
+    color: #ffd700;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+.rating-popup-hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.rating-popup-skip-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 10px 25px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.rating-popup-skip-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-main);
+}

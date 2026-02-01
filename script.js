@@ -78,9 +78,16 @@ document.addEventListener('keydown', (event) => {
 	}
 });
 
-// Autoplay next track when one finishes
+// Track if current song has been rated this session
+let currentSongRated = false;
+
+// Autoplay next track when one finishes (if rated)
 audioPlayer.addEventListener('ended', () => {
-	playNextSong();
+	if (currentSongRated) {
+		playNextSong();
+	} else {
+		showRatingPopup();
+	}
 });
 
 // Detect if user skips forward (seeking ahead invalidates listen credit)
@@ -374,6 +381,11 @@ function playSong(songId) {
 	listenCredited = false;
 	listenInvalidated = false; // Reset skip detection for new song
 	lastPlaybackTime = 0; // Reset playback position tracker
+	currentSongRated = false; // Reset rating status for new song
+	
+	// Check if user already rated this song
+	checkIfUserRatedSong(songId);
+	
 	updateNowPlayingCard(song);
 
 	document.querySelectorAll('.play-button').forEach((btn) => {
@@ -633,6 +645,18 @@ function checkUserHasRated(songId) {
 	});
 }
 
+// Check if user already rated a song (for auto-play decision)
+function checkIfUserRatedSong(songId) {
+	if (typeof database === 'undefined') return;
+
+	const userRatingRef = database.ref(`songs/${songId}/ratings/${clientId}`);
+	userRatingRef.once('value', (snapshot) => {
+		if (snapshot.exists()) {
+			currentSongRated = true;
+		}
+	});
+}
+
 function rateSong(songId, rating) {
 	if (typeof database === 'undefined') return;
 
@@ -652,12 +676,73 @@ function rateSong(songId, rating) {
 			}
 			// Reveal the rating now that user has rated
 			revealRating(songId);
+			// Mark current song as rated
+			if (songId === currentSongId) {
+				currentSongRated = true;
+			}
 		})
 		.catch((error) => {
 			console.error('Error saving rating:', error);
 			const messageEl = document.getElementById(`rating-message-${songId}`);
 			if (messageEl) messageEl.textContent = 'Error saving rating';
 		});
+}
+
+// ===== RATING POPUP =====
+function showRatingPopup() {
+	const popup = document.getElementById('rating-popup');
+	const songTitle = document.getElementById('rating-popup-song-title');
+	const starsContainer = document.getElementById('rating-popup-stars');
+	
+	if (!popup || !currentSongId) return;
+	
+	// Get current song title
+	const currentSong = allSongs.find(s => s.id === currentSongId);
+	if (songTitle && currentSong) {
+		songTitle.textContent = currentSong.title;
+	}
+	
+	// Reset stars
+	const stars = starsContainer.querySelectorAll('.popup-star');
+	stars.forEach(star => {
+		star.classList.remove('selected', 'hovered');
+	});
+	
+	popup.style.display = 'flex';
+	
+	// Setup star hover effects
+	stars.forEach((star, index) => {
+		star.onmouseenter = () => {
+			stars.forEach((s, i) => {
+				s.classList.toggle('hovered', i <= index);
+			});
+		};
+		star.onmouseleave = () => {
+			stars.forEach(s => s.classList.remove('hovered'));
+		};
+		star.onclick = () => {
+			const rating = parseInt(star.dataset.rating);
+			rateSong(currentSongId, rating);
+			hideRatingPopup();
+			playNextSong();
+		};
+	});
+	
+	// Setup skip button
+	const skipBtn = document.getElementById('rating-popup-skip');
+	if (skipBtn) {
+		skipBtn.onclick = () => {
+			hideRatingPopup();
+			playNextSong();
+		};
+	}
+}
+
+function hideRatingPopup() {
+	const popup = document.getElementById('rating-popup');
+	if (popup) {
+		popup.style.display = 'none';
+	}
 }
 
 // ===== FEEDBACK =====
