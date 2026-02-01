@@ -1006,20 +1006,15 @@ function animateStarfield() {
 			const depthFactor = 1 + (1000 - star.z) / 800;
 			const moveSpeed = speed * depthFactor;
 			
-			// Move star outward using stored velocity direction
-			star.x += star.vx * moveSpeed;
-			star.y += star.vy * moveSpeed;
-			star.z -= moveSpeed * 2; // Come closer
+			// Move star outward using stored velocity direction - faster outward movement
+			star.x += star.vx * moveSpeed * 2.5;
+			star.y += star.vy * moveSpeed * 2.5;
+			star.z -= moveSpeed; // Come closer slower so stars reach edges
 			star.twinkle += 0.1;
 			
-			// Dynamic edge detection based on screen size
-			// Stars need to travel far enough to fully exit the largest dimension
-			const edgeBuffer = Math.max(canvas.width, canvas.height) * 0.15;
-			
-			// Check if star is fully off screen or too close
-			if (star.x < -edgeBuffer || star.x > canvas.width + edgeBuffer || 
-			    star.y < -edgeBuffer || star.y > canvas.height + edgeBuffer || 
-			    star.z < -500) {
+			// Only despawn when star is actually off screen - no z-based despawn
+			if (star.x < -50 || star.x > canvas.width + 50 || 
+			    star.y < -50 || star.y > canvas.height + 50) {
 				// Respawn from center
 				stars[i] = createStar(true);
 				continue;
