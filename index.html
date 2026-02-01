@@ -57,6 +57,23 @@
         </footer>
     </div>
 
+    <!-- Rating Popup Modal -->
+    <div id="rating-popup" class="rating-popup-overlay" style="display: none;">
+        <div class="rating-popup-modal">
+            <h2>What do you think?</h2>
+            <p id="rating-popup-song-title" class="rating-popup-song"></p>
+            <div class="rating-popup-stars" id="rating-popup-stars">
+                <span class="popup-star" data-rating="1">★</span>
+                <span class="popup-star" data-rating="2">★</span>
+                <span class="popup-star" data-rating="3">★</span>
+                <span class="popup-star" data-rating="4">★</span>
+                <span class="popup-star" data-rating="5">★</span>
+            </div>
+            <p class="rating-popup-hint">Click a star to rate</p>
+            <button id="rating-popup-skip" class="rating-popup-skip-btn">Skip Rating</button>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
