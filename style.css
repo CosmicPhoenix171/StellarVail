@@ -964,6 +964,35 @@ body.low-perf-mode .aurora-noise {
     display: none !important;
 }
 
+/* Hide UI mode - immersive starfield viewing */
+body.hide-ui-mode .app-shell {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+body.hide-ui-mode .show-ui-hint {
+    opacity: 1;
+}
+
+.show-ui-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 body.low-perf-mode .main-content,
 body.low-perf-mode .search-bar,
 body.low-perf-mode .user-pill,

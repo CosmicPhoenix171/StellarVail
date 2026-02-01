@@ -34,6 +34,35 @@ const playerBar = document.querySelector('.player-bar');
 // Hide player until a song is selected
 if (playerBar) playerBar.classList.add('hidden');
 
+// ===== HIDE UI MODE =====
+let uiHidden = false;
+
+function toggleHideUI() {
+	uiHidden = !uiHidden;
+	document.body.classList.toggle('hide-ui-mode', uiHidden);
+}
+
+function showUI() {
+	if (uiHidden) {
+		uiHidden = false;
+		document.body.classList.remove('hide-ui-mode');
+	}
+}
+
+// Click anywhere to show UI when hidden
+document.addEventListener('click', (event) => {
+	if (uiHidden && !event.target.closest('.app-shell')) {
+		showUI();
+	}
+});
+
+// Escape key shows UI
+document.addEventListener('keydown', (event) => {
+	if (event.code === 'Escape' && uiHidden) {
+		showUI();
+	}
+});
+
 // Spacebar toggles play/pause (except when typing in inputs/textareas/buttons)
 document.addEventListener('keydown', (event) => {
 	if (event.code !== 'Space') return;
