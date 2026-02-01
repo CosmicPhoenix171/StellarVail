@@ -291,9 +291,9 @@ function createSongCard(song) {
 		<div class="song-summary">
 			<div class="summary-info">
 				<h3>${song.title}</h3>
-				${dateHtml}
 			</div>
 			<div class="summary-metrics">
+				${dateHtml}
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${song.id}">
 					<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>

@@ -526,26 +526,29 @@ body {
 
 .summary-info {
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .summary-info h3 {
     font-size: 1.2em;
     letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    margin-bottom: 0;
 }
 
 .date-added {
     font-size: 0.75em;
     color: rgba(255, 255, 255, 0.5);
     letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .summary-metrics {
-    text-align: right;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .summary-rating {
@@ -565,8 +568,8 @@ body {
 .avg-rating {
     font-size: 1.1em;
     font-weight: 600;
-    color: #ffd700;
-    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+    color: var(--accent);
+    text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
 }
 
 .rating-count {
