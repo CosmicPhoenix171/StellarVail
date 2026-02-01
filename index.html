@@ -25,9 +25,9 @@
                         <button id="sort-rating-btn" class="sort-btn" onclick="setSortMode('rating')">⭐ Rating</button>
                         <button id="sort-date-btn" class="sort-btn active" onclick="setSortMode('date')">📅 Newest</button>
                     </div>
-                    <div class="user-pill">
+                    <div class="user-pill" onclick="showLoginPopup()" title="Click to sign in">
                         <span class="status-dot"></span>
-                        <span>Guest</span>
+                        <span id="user-name-display">Guest</span>
                     </div>
                 </header>
             </main>
@@ -71,6 +71,21 @@
             </div>
             <p class="rating-popup-hint">Click a star to rate</p>
             <button id="rating-popup-skip" class="rating-popup-skip-btn">Skip Rating</button>
+        </div>
+    </div>
+
+    <!-- Login Popup Modal -->
+    <div id="login-popup" class="rating-popup-overlay" style="display: none;">
+        <div class="rating-popup-modal login-modal">
+            <h2>Sign In</h2>
+            <p class="login-hint">Enter a username to sync your ratings across devices</p>
+            <input type="text" id="login-username" class="login-input" placeholder="Enter username..." maxlength="20" autocomplete="off">
+            <div class="login-buttons">
+                <button id="login-submit-btn" class="login-submit-btn">Sign In</button>
+                <button id="login-cancel-btn" class="rating-popup-skip-btn">Cancel</button>
+            </div>
+            <div id="login-status" class="login-status"></div>
+            <button id="logout-btn" class="logout-btn" style="display: none;">Sign Out</button>
         </div>
     </div>
 

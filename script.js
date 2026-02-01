@@ -943,12 +943,149 @@ function prefillFeedback(songId, buttonEl) {
 // Persist a client-scoped identifier so guests can update their own rating.
 function getClientId() {
 	const key = 'sv_client_id';
+	const usernameKey = 'sv_username';
+	
+	// Check if user has a username set
+	const username = localStorage.getItem(usernameKey);
+	if (username) {
+		return `user_${sanitizeUsername(username)}`;
+	}
+	
+	// Otherwise use guest ID
 	const existing = localStorage.getItem(key);
 	if (existing) return existing;
 	const newId = `guest_${Math.random().toString(36).slice(2, 10)}`;
 	localStorage.setItem(key, newId);
 	return newId;
 }
+
+function sanitizeUsername(name) {
+	// Remove special characters that Firebase doesn't allow in paths
+	return name.toLowerCase().replace(/[.#$\[\]\/\\'"]/g, '').replace(/\s+/g, '_').slice(0, 20);
+}
+
+function getDisplayName() {
+	const username = localStorage.getItem('sv_username');
+	return username || 'Guest';
+}
+
+function updateUserDisplay() {
+	const displayEl = document.getElementById('user-name-display');
+	if (displayEl) {
+		const name = getDisplayName();
+		displayEl.textContent = name;
+		
+		// Update status dot color if signed in
+		const statusDot = displayEl.previousElementSibling;
+		if (statusDot && statusDot.classList.contains('status-dot')) {
+			if (name !== 'Guest') {
+				statusDot.style.background = '#00ff88';
+				statusDot.style.boxShadow = '0 0 8px #00ff88';
+			}
+		}
+	}
+}
+
+function showLoginPopup() {
+	const popup = document.getElementById('login-popup');
+	const usernameInput = document.getElementById('login-username');
+	const logoutBtn = document.getElementById('logout-btn');
+	const statusEl = document.getElementById('login-status');
+	
+	if (!popup) return;
+	
+	// Check if already signed in
+	const currentUsername = localStorage.getItem('sv_username');
+	if (currentUsername) {
+		usernameInput.value = currentUsername;
+		logoutBtn.style.display = 'inline-block';
+		statusEl.textContent = `Signed in as ${currentUsername}`;
+		statusEl.classList.remove('error');
+	} else {
+		usernameInput.value = '';
+		logoutBtn.style.display = 'none';
+		statusEl.textContent = '';
+	}
+	
+	popup.style.display = 'flex';
+	usernameInput.focus();
+	
+	// Setup event handlers
+	const submitBtn = document.getElementById('login-submit-btn');
+	const cancelBtn = document.getElementById('login-cancel-btn');
+	
+	submitBtn.onclick = () => handleLogin();
+	cancelBtn.onclick = () => hideLoginPopup();
+	logoutBtn.onclick = () => handleLogout();
+	
+	usernameInput.onkeydown = (e) => {
+		if (e.key === 'Enter') handleLogin();
+		if (e.key === 'Escape') hideLoginPopup();
+	};
+}
+
+function hideLoginPopup() {
+	const popup = document.getElementById('login-popup');
+	if (popup) {
+		popup.style.display = 'none';
+	}
+}
+
+function handleLogin() {
+	const usernameInput = document.getElementById('login-username');
+	const statusEl = document.getElementById('login-status');
+	
+	const username = usernameInput.value.trim();
+	
+	if (!username) {
+		statusEl.textContent = 'Please enter a username';
+		statusEl.classList.add('error');
+		return;
+	}
+	
+	if (username.length < 2) {
+		statusEl.textContent = 'Username must be at least 2 characters';
+		statusEl.classList.add('error');
+		return;
+	}
+	
+	// Save username and update clientId
+	localStorage.setItem('sv_username', username);
+	clientId = getClientId(); // Refresh clientId with new username
+	
+	statusEl.textContent = `Signed in as ${username}!`;
+	statusEl.classList.remove('error');
+	
+	updateUserDisplay();
+	
+	// Close popup after a brief delay
+	setTimeout(() => {
+		hideLoginPopup();
+	}, 1000);
+}
+
+function handleLogout() {
+	localStorage.removeItem('sv_username');
+	clientId = getClientId(); // Refresh to guest ID
+	
+	const statusEl = document.getElementById('login-status');
+	const logoutBtn = document.getElementById('logout-btn');
+	const usernameInput = document.getElementById('login-username');
+	
+	statusEl.textContent = 'Signed out';
+	statusEl.classList.remove('error');
+	logoutBtn.style.display = 'none';
+	usernameInput.value = '';
+	
+	updateUserDisplay();
+	
+	setTimeout(() => {
+		hideLoginPopup();
+	}, 1000);
+}
+
+// Initialize user display on load
+document.addEventListener('DOMContentLoaded', updateUserDisplay);
 
 // ===== PERFORMANCE MODE =====
 function togglePerfMode() {
