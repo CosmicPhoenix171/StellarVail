@@ -1012,9 +1012,13 @@ function animateStarfield() {
 			star.z -= moveSpeed * 2; // Come closer
 			star.twinkle += 0.1;
 			
+			// Dynamic edge detection based on screen size
+			// Stars need to travel far enough to fully exit the largest dimension
+			const edgeBuffer = Math.max(canvas.width, canvas.height) * 0.15;
+			
 			// Check if star is fully off screen or too close
-			if (star.x < -200 || star.x > canvas.width + 200 || 
-			    star.y < -200 || star.y > canvas.height + 200 || 
+			if (star.x < -edgeBuffer || star.x > canvas.width + edgeBuffer || 
+			    star.y < -edgeBuffer || star.y > canvas.height + edgeBuffer || 
 			    star.z < -500) {
 				// Respawn from center
 				stars[i] = createStar(true);
@@ -1022,8 +1026,8 @@ function animateStarfield() {
 			}
 		}
 		
-		// Calculate size based on depth (closer = bigger)
-		const size = Math.max(0.5, (1000 - star.z) / 200);
+		// Calculate size based on depth (closer = bigger) - reduced by 25%
+		const size = Math.max(0.4, (1000 - star.z) / 267);
 		
 		// Twinkle effect
 		const twinkle = 0.5 + Math.sin(star.twinkle) * 0.5;
