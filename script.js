@@ -895,8 +895,8 @@ const starfieldCanvas = document.getElementById('starfield');
 const starfieldCtx = starfieldCanvas ? starfieldCanvas.getContext('2d') : null;
 let stars = [];
 const STAR_COUNT = 200;
-const BASE_SPEED = 0.5;
-const BEAT_SPEED_MULTIPLIER = 8;
+const BASE_SPEED = 0.3;
+const BEAT_SPEED_MULTIPLIER = 2;
 
 // Star colors that shift with the beat
 const starColors = [
@@ -974,13 +974,13 @@ function animateStarfield() {
 		if (isPlaying) {
 			const speed = BASE_SPEED + (boost * BEAT_SPEED_MULTIPLIER);
 			// Speed increases as star gets closer (perspective acceleration)
-			const depthFactor = 1 + (1000 - star.z) / 300;
+			const depthFactor = 1 + (1000 - star.z) / 800;
 			const moveSpeed = speed * depthFactor;
 			
 			// Move star outward using stored velocity direction
-			star.x += star.vx * moveSpeed * 3;
-			star.y += star.vy * moveSpeed * 3;
-			star.z -= moveSpeed * 5; // Come closer faster
+			star.x += star.vx * moveSpeed;
+			star.y += star.vy * moveSpeed;
+			star.z -= moveSpeed * 2; // Come closer
 			star.twinkle += 0.1;
 			
 			// Check if star is off screen or too close
