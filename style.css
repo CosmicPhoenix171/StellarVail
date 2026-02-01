@@ -92,14 +92,14 @@ body {
         radial-gradient(circle at 50% 22%, white 1.1px, transparent 3px),
         radial-gradient(circle at 38% 42%, white 1px, transparent 2px),
         radial-gradient(circle at 62% 52%, rgba(189,0,255,0.7) 1.3px, transparent 4px);
-    opacity: calc(0.05 + (var(--star-boost, 0) * 0.95));
-    animation: starDrift 160s linear infinite;
+    opacity: calc(0.3 + (var(--star-boost, 0) * 0.7));
     z-index: 1;
     mix-blend-mode: screen;
-    filter: brightness(calc(1 + var(--star-boost, 0)));
-    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.6)));
+    filter: brightness(calc(1 + var(--star-boost, 0) * 1.5)) 
+            hue-rotate(calc(var(--star-boost, 0) * 30deg));
+    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.4)));
     transform-origin: center;
-    transition: transform 0.05s linear, opacity 0.12s ease;
+    transition: transform 0.05s linear, opacity 0.08s ease, filter 0.05s ease;
 }
 
 .aurora-stars-2 {
@@ -137,14 +137,14 @@ body {
         radial-gradient(circle at 44% 32%, white 1px, transparent 2px),
         radial-gradient(circle at 58% 92%, white 1.1px, transparent 3px),
         radial-gradient(circle at 30% 92%, white 1.2px, transparent 3px);
-    opacity: calc(0.04 + (var(--star-boost, 0) * 0.9));
-    animation: starDrift 200s linear infinite reverse;
+    opacity: calc(0.25 + (var(--star-boost, 0) * 0.7));
     z-index: 1;
     mix-blend-mode: screen;
-    filter: brightness(calc(1 + var(--star-boost, 0)));
-    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.6)));
+    filter: brightness(calc(1 + var(--star-boost, 0) * 1.5)) 
+            hue-rotate(calc(var(--star-boost, 0) * -20deg));
+    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.35)));
     transform-origin: center;
-    transition: transform 0.05s linear, opacity 0.12s ease;
+    transition: transform 0.05s linear, opacity 0.08s ease, filter 0.05s ease;
 }
 
 .aurora-star-variants {
@@ -162,21 +162,15 @@ body {
         38% 78%,
         86% 62%,
         24% 64%;
-    opacity: calc(0.02 + (var(--star-boost, 0) * 0.9));
-    filter: brightness(calc(0.8 + var(--star-boost, 0)));
-    transform: translateZ(0) scale(calc(0.9 + (var(--star-boost, 0) * 0.7)));
+    opacity: calc(0.2 + (var(--star-boost, 0) * 0.8));
+    filter: brightness(calc(1 + var(--star-boost, 0) * 2)) 
+            hue-rotate(calc(var(--star-boost, 0) * 45deg));
+    transform: translateZ(0) scale(calc(1 + (var(--star-boost, 0) * 0.5)));
     transform-origin: center;
-    transition: transform 0.08s linear, opacity 0.15s ease;
-    animation: starVariantFloat 28s ease-in-out infinite;
+    transition: transform 0.05s linear, opacity 0.08s ease, filter 0.05s ease;
     z-index: 1;
     pointer-events: none;
     mix-blend-mode: screen;
-}
-
-@keyframes starVariantFloat {
-    0% { transform: translate3d(0, 0, 0) scale(calc(0.9 + (var(--star-boost, 0) * 0.7))); }
-    50% { transform: translate3d(0, -10px, 0) scale(calc(1.05 + (var(--star-boost, 0) * 0.8))); }
-    100% { transform: translate3d(0, 0, 0) scale(calc(0.9 + (var(--star-boost, 0) * 0.7))); }
 }
 
 .aurora-wave {
@@ -240,11 +234,6 @@ body {
     background-size: 400px 400px;
     animation: noiseShift 14s linear infinite;
     transform: translateZ(0);
-}
-
-@keyframes starDrift {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(0, -200px, 0); }
 }
 
 @keyframes auroraCurtain {
