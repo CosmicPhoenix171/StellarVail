@@ -958,7 +958,7 @@ function animateStarfield() {
 	const centerY = canvas.height / 2;
 	
 	// Check if audio is playing
-	const isPlaying = currentAudio && !currentAudio.paused;
+	const isPlaying = audioPlayer && !audioPlayer.paused;
 	
 	// Get current beat intensity from CSS variable
 	const boost = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--star-boost')) || 0;
