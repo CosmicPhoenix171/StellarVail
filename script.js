@@ -983,10 +983,10 @@ function animateStarfield() {
 			star.z -= moveSpeed * 2; // Come closer
 			star.twinkle += 0.1;
 			
-			// Check if star is off screen or too close
-			if (star.x < -50 || star.x > canvas.width + 50 || 
-			    star.y < -50 || star.y > canvas.height + 50 || 
-			    star.z < 0) {
+			// Check if star is fully off screen or too close
+			if (star.x < -200 || star.x > canvas.width + 200 || 
+			    star.y < -200 || star.y > canvas.height + 200 || 
+			    star.z < -500) {
 				// Respawn from center
 				stars[i] = createStar(true);
 				continue;
