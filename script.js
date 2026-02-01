@@ -299,6 +299,7 @@ function createSongCard(song) {
 					<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
 				</div>
 				<span class="listen-count" id="listen-count-${song.id}">0 listens</span>
+				<span class="comment-count" id="comment-count-${song.id}" title="Comments">💬 0</span>
 			</div>
 		</div>
 		<button class="play-button" onclick="togglePlaySong('${song.id}')" data-song-id="${song.id}">
@@ -641,8 +642,32 @@ function checkUserHasRated(songId) {
 	userRatingRef.once('value', (snapshot) => {
 		if (snapshot.exists()) {
 			revealRating(songId);
+			// Show user's current rating on the stars
+			const userRating = snapshot.val().rating;
+			highlightUserRating(songId, userRating);
 		}
 	});
+}
+
+// Highlight the stars to show user's current rating
+function highlightUserRating(songId, rating) {
+	const starsContainer = document.getElementById(`rating-stars-${songId}`);
+	const messageEl = document.getElementById(`rating-message-${songId}`);
+	
+	if (starsContainer) {
+		const stars = starsContainer.querySelectorAll('.star');
+		stars.forEach((star, index) => {
+			if (index < rating) {
+				star.classList.add('user-rated');
+			} else {
+				star.classList.remove('user-rated');
+			}
+		});
+	}
+	
+	if (messageEl) {
+		messageEl.textContent = `Your rating: ${rating}★ (click to change)`;
+	}
 }
 
 // Check if user already rated a song (for auto-play decision)
@@ -667,12 +692,15 @@ function rateSong(songId, rating) {
 			timestamp: Date.now(),
 		})
 		.then(() => {
+			// Show updated rating on stars
+			highlightUserRating(songId, rating);
+			
 			const messageEl = document.getElementById(`rating-message-${songId}`);
 			if (messageEl) {
-				messageEl.textContent = 'Rating saved';
+				messageEl.textContent = 'Rating updated!';
 				setTimeout(() => {
-					messageEl.textContent = 'Click stars to rate';
-				}, 2500);
+					messageEl.textContent = `Your rating: ${rating}★ (click to change)`;
+				}, 1500);
 			}
 			// Reveal the rating now that user has rated
 			revealRating(songId);
@@ -752,9 +780,18 @@ function loadFeedback(songId) {
 	const feedbackRef = database.ref(`songs/${songId}/feedback`);
 	feedbackRef.on('value', (snapshot) => {
 		const feedbackList = document.getElementById(`feedback-list-${songId}`);
+		const commentCountEl = document.getElementById(`comment-count-${songId}`);
+		
+		const feedbacks = snapshot.val();
+		const commentCount = feedbacks ? Object.keys(feedbacks).length : 0;
+		
+		// Update comment count in card header
+		if (commentCountEl) {
+			commentCountEl.textContent = `💬 ${commentCount}`;
+		}
+		
 		if (!feedbackList) return;
 
-		const feedbacks = snapshot.val();
 		if (!feedbacks) {
 			feedbackList.innerHTML = '<p class="no-feedback">No comments yet. Be the first!</p>';
 			return;

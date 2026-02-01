@@ -578,6 +578,16 @@ body {
     color: var(--accent-2);
 }
 
+.comment-count {
+    font-size: 0.85em;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.comment-count:hover {
+    text-decoration: underline;
+}
+
 .song-card.placeholder-card {
     border: 1px dashed rgba(255, 255, 255, 0.15);
     align-items: center;
@@ -641,6 +651,8 @@ body {
 .rating-stars { display: flex; gap: 6px; }
 .star { font-size: 1.6em; color: rgba(255,255,255,0.1); cursor: pointer; transition: color 0.2s; }
 .star:hover, .star.filled { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+.star.user-rated { color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
+.star.user-rated:hover { text-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
 
 .feedback-section {
     margin-top: 16px;
