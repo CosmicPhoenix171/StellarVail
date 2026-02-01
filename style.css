@@ -518,21 +518,17 @@ body {
 }
 
 .song-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    display: block;
 }
 
 .summary-info {
     cursor: pointer;
-    flex-shrink: 0;
 }
 
 .summary-info h3 {
     font-size: 1.2em;
     letter-spacing: 0.5px;
-    margin-bottom: 0;
+    margin-bottom: 6px;
 }
 
 .date-added {
@@ -548,7 +544,6 @@ body {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    justify-content: flex-end;
 }
 
 .summary-rating {
