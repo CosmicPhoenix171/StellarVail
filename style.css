@@ -39,16 +39,23 @@ body {
 
 .aurora-sky {
     position: fixed;
-    inset: 0;
+    inset: -5%;
+    width: 110%;
+    height: 110%;
     overflow: hidden;
     z-index: -5;
     pointer-events: none;
     background: url('Steller.png') no-repeat center center;
     background-size: cover;
-    contain: strict;
+    contain: layout style paint;
     isolation: isolate;
-    transform: translateZ(0);
     backface-visibility: hidden;
+    /* Beat-reactive effects */
+    transform: translateZ(0) scale(calc(1 + var(--star-boost) * 0.05));
+    filter: brightness(calc(0.9 + var(--star-boost) * 0.3)) 
+            hue-rotate(calc(var(--star-boost) * 25deg))
+            saturate(calc(1 + var(--star-boost) * 0.5));
+    transition: transform 0.05s ease-out, filter 0.05s ease-out;
 }
 
 .aurora-stars,
