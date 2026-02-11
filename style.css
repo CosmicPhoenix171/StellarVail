@@ -517,12 +517,78 @@ body {
     -webkit-backdrop-filter: blur(22px);
 }
 
+/* Top 12 highest rated songs - Golden glow */
+.song-card.top-rated {
+    border-color: rgba(255, 215, 0, 0.6);
+    box-shadow: 
+        0 0 15px rgba(255, 215, 0, 0.3),
+        0 0 30px rgba(255, 180, 0, 0.2),
+        inset 0 0 20px rgba(255, 215, 0, 0.05);
+    position: relative;
+}
+
+.song-card.top-rated::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    padding: 2px;
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0.8), 
+        rgba(255, 180, 0, 0.4), 
+        rgba(255, 215, 0, 0.8));
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: goldenPulse 3s ease-in-out infinite;
+}
+
+.song-card.top-rated:hover {
+    border-color: rgba(255, 215, 0, 0.9);
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.5),
+        0 0 25px rgba(255, 215, 0, 0.4),
+        0 0 50px rgba(255, 180, 0, 0.25);
+}
+
+/* Playing song that is also top-rated */
+.song-card.top-rated.in-now-playing {
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 
+        0 0 20px rgba(255, 0, 255, 0.3),
+        0 0 30px rgba(255, 215, 0, 0.4);
+    background: linear-gradient(145deg, rgba(255, 215, 0, 0.1), rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.45));
+}
+
+@keyframes goldenPulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
 .song-summary {
     display: block;
 }
 
 .summary-info {
     cursor: pointer;
+    padding: 8px;
+    margin: -8px;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.summary-info:hover {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .summary-info h3 {

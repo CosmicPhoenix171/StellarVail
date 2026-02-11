@@ -156,12 +156,28 @@ function debouncedSortSongs() {
 }
 
 function sortSongCards() {
+	// Get all cards from the songs container, excluding placeholder and the active card in Now Playing
 	const cards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
-	if (cards.length === 0) return;
+	
+	// Also need to consider the placeholder's position for sorting
+	const placeholder = songsContainer.querySelector('.placeholder-card');
+	
+	if (cards.length === 0 && !placeholder) return;
 
-	cards.sort((a, b) => {
-		const idA = a.dataset.songId;
-		const idB = b.dataset.songId;
+	// Build a combined list that includes the placeholder (representing the active song)
+	let sortableItems = [...cards];
+	
+	// If there's a placeholder (song is in Now Playing), include it in sorting
+	if (placeholder && activeCardElement) {
+		sortableItems.push(placeholder);
+	}
+
+	sortableItems.sort((a, b) => {
+		// Get the actual song ID (placeholder uses active card's ID)
+		const idA = a.classList.contains('placeholder-card') ? activeCardElement?.dataset.songId : a.dataset.songId;
+		const idB = b.classList.contains('placeholder-card') ? activeCardElement?.dataset.songId : b.dataset.songId;
+		
+		if (!idA || !idB) return 0;
 		
 		if (currentSortMode === 'date') {
 			// Sort by date (newest first)
@@ -192,7 +208,49 @@ function sortSongCards() {
 	});
 
 	// Re-append in sorted order (moves existing DOM nodes)
-	cards.forEach(card => songsContainer.appendChild(card));
+	sortableItems.forEach(item => songsContainer.appendChild(item));
+	
+	// Mark top 12 highest-rated songs with golden glow
+	markTop12RatedSongs();
+}
+
+// Mark top 12 highest-rated songs with a golden glow
+function markTop12RatedSongs() {
+	// Get cards from the songs container
+	const containerCards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
+	
+	// Also include the active card from Now Playing panel if it exists
+	const allCards = activeCardElement ? [...containerCards, activeCardElement] : containerCards;
+	
+	// Sort by rating to find top 12 (regardless of current sort mode)
+	const sortedByRating = [...allCards].sort((a, b) => {
+		const idA = a.dataset.songId;
+		const idB = b.dataset.songId;
+		const statsA = songStats[idA] || { rating: 0, listens: 0 };
+		const statsB = songStats[idB] || { rating: 0, listens: 0 };
+		
+		// Primary: rating (higher first)
+		if (statsB.rating !== statsA.rating) {
+			return statsB.rating - statsA.rating;
+		}
+		// Secondary: listens (higher first)
+		return statsB.listens - statsA.listens;
+	});
+	
+	// Get top 12 song IDs
+	const top12Ids = new Set(sortedByRating.slice(0, 12).map(card => card.dataset.songId));
+	
+	// Apply or remove the top-rated class
+	allCards.forEach(card => {
+		const songId = card.dataset.songId;
+		const stats = songStats[songId] || { rating: 0 };
+		// Only mark as top-rated if they have at least some rating
+		if (top12Ids.has(songId) && stats.rating > 0) {
+			card.classList.add('top-rated');
+		} else {
+			card.classList.remove('top-rated');
+		}
+	});
 }
 
 // ===== DATA LOADING =====
@@ -289,7 +347,7 @@ function createSongCard(song) {
 	
 	card.innerHTML = `
 		<div class="song-summary">
-			<div class="summary-info">
+			<div class="summary-info" onclick="loadSongToPlayer('${song.id}')">
 				<h3>${song.title}</h3>
 				<div class="summary-metrics">
 					${dateHtml}
@@ -344,6 +402,41 @@ function createSongCard(song) {
 }
 
 // ===== PLAYBACK CONTROLS =====
+
+// Load a song into the player without playing it
+function loadSongToPlayer(songId) {
+	// If already loaded, do nothing
+	if (currentSongId === songId) return;
+	
+	const song = songsData.find((s) => s.id === songId);
+	if (!song) return;
+
+	if (playerBar) playerBar.classList.remove('hidden');
+
+	// Set the audio source but don't play
+	audioPlayer.src = `${basePath}music/${song.filename}`;
+
+	listenCreditSongId = songId;
+	listenCredited = false;
+	listenInvalidated = false;
+	lastPlaybackTime = 0;
+	currentSongRated = false;
+	
+	// Check if user already rated this song
+	checkIfUserRatedSong(songId);
+	
+	// Move card to Now Playing panel
+	moveCardToPlayer(song.id);
+
+	// Reset all play buttons
+	document.querySelectorAll('.play-button').forEach((btn) => {
+		btn.classList.remove('playing');
+		btn.textContent = '▶ Play';
+	});
+
+	currentSongId = songId;
+}
+
 function togglePlaySong(songId) {
 	// If this is the current song, toggle play/pause
 	if (currentSongId === songId) {
