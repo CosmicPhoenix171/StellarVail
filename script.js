@@ -376,6 +376,13 @@ function createSongCard(song) {
 				</div>
 				<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
 			</div>
+			${isAdminMode ? `<div class="ratings-breakdown" id="ratings-breakdown-${song.id}">
+				<div class="ratings-breakdown-header" onclick="toggleRatingsBreakdown('${song.id}')">
+					<h4>👤 Individual Ratings</h4>
+					<button type="button" class="feedback-toggle ratings-breakdown-toggle" id="ratings-toggle-${song.id}">▼</button>
+				</div>
+				<div class="ratings-breakdown-list collapsed" id="ratings-list-${song.id}"></div>
+			</div>` : ''}
 			<div class="feedback-section collapsed" id="feedback-section-${song.id}">
 				<div class="feedback-header-row">
 					<h4>Comments</h4>
@@ -705,6 +712,33 @@ function loadRatingData(songId) {
 		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'})`;
 
 		updateStarsDisplay(songId, parseFloat(average));
+
+		// Admin mode: show individual user ratings
+		if (isAdminMode && ratings) {
+			const breakdownList = document.getElementById(`ratings-list-${songId}`);
+			if (breakdownList) {
+				const entries = Object.entries(ratings)
+					.map(([id, data]) => ({ userId: id, ...data }))
+					.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+				if (entries.length === 0) {
+					breakdownList.innerHTML = '<p class="no-ratings-yet">No ratings yet.</p>';
+				} else {
+					breakdownList.innerHTML = entries.map(entry => {
+						const name = formatRaterName(entry.userId);
+						const stars = '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating);
+						const timeAgo = entry.timestamp ? formatTime(entry.timestamp) : '';
+						return `
+							<div class="rating-entry">
+								<span class="rater-name">${escapeHtml(name)}</span>
+								<span class="rater-stars" data-rating="${entry.rating}">${stars}</span>
+								<span class="rater-time">${timeAgo}</span>
+							</div>
+						`;
+					}).join('');
+				}
+			}
+		}
 		
 		// Track for sorting
 		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
@@ -1095,6 +1129,25 @@ function getClientId() {
 	const newId = `guest_${Math.random().toString(36).slice(2, 10)}`;
 	localStorage.setItem(key, newId);
 	return newId;
+}
+
+// Format a Firebase rating key into a readable display name
+function formatRaterName(userId) {
+	if (userId.startsWith('user_')) {
+		return userId.slice(5).replace(/_/g, ' ');
+	}
+	if (userId.startsWith('guest_')) {
+		return 'Guest ' + userId.slice(6, 10);
+	}
+	return userId;
+}
+
+function toggleRatingsBreakdown(songId) {
+	const list = document.getElementById(`ratings-list-${songId}`);
+	const toggle = document.getElementById(`ratings-toggle-${songId}`);
+	if (!list) return;
+	const isCollapsed = list.classList.toggle('collapsed');
+	if (toggle) toggle.textContent = isCollapsed ? '▼' : '▲';
 }
 
 function sanitizeUsername(name) {

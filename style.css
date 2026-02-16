@@ -741,6 +741,110 @@ body {
 .star.user-rated { color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
 .star.user-rated:hover { text-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
 
+/* ===== ADMIN: Individual Ratings Breakdown ===== */
+.ratings-breakdown {
+    margin-top: 16px;
+    border: 1px solid rgba(189, 0, 255, 0.2);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(189, 0, 255, 0.05);
+}
+
+.ratings-breakdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    gap: 10px;
+}
+
+.ratings-breakdown-header h4 {
+    margin: 0;
+    font-size: 1.05em;
+    color: var(--accent-3);
+    font-weight: 600;
+}
+
+.ratings-breakdown-toggle {
+    border: 1px solid rgba(189, 0, 255, 0.25);
+    background: rgba(189, 0, 255, 0.1);
+}
+
+.ratings-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ratings-breakdown-list.collapsed {
+    display: none;
+}
+
+.rating-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.9em;
+    transition: background 0.2s;
+}
+
+.rating-entry:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.rater-name {
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 80px;
+    text-transform: capitalize;
+}
+
+.rater-stars {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 1.1em;
+    letter-spacing: 1px;
+}
+
+.rater-stars[data-rating="5"] { color: #ffd700; text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+.rater-stars[data-rating="4"] { color: #ffd700; }
+.rater-stars[data-rating="3"] { color: #ffb347; }
+.rater-stars[data-rating="2"] { color: #ff8c69; }
+.rater-stars[data-rating="1"] { color: #ff6b6b; }
+
+.rater-time {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.no-ratings-yet {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    font-style: italic;
+    text-align: center;
+    padding: 8px 0;
+}
+
+/* Scrollbar styling for ratings list */
+.ratings-breakdown-list::-webkit-scrollbar {
+    width: 4px;
+}
+.ratings-breakdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ratings-breakdown-list::-webkit-scrollbar-thumb {
+    background: rgba(189, 0, 255, 0.3);
+    border-radius: 4px;
+}
+
 .feedback-section {
     margin-top: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
