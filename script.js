@@ -375,21 +375,21 @@ function createSongCard(song) {
 				<div class="rating-stars" id="rating-stars-${song.id}">
 					${[1, 2, 3, 4, 5].map((i) => `<span class="star" data-rating="${i}" onclick="rateSong('${song.id}', ${i})">★</span>`).join('')}
 				</div>
-				<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
+				<p class="rating-message" id="rating-message-${song.id}">${isAdminMode ? '' : 'Click stars to rate'}</p>
 			</div>
 			${isAdminMode ? `<div class="ratings-breakdown" id="ratings-breakdown-${song.id}">
 				<div class="ratings-breakdown-header" onclick="toggleRatingsBreakdown('${song.id}')">
 					<h4>👤 Individual Ratings</h4>
-					<button type="button" class="feedback-toggle ratings-breakdown-toggle" id="ratings-toggle-${song.id}">▼</button>
+					<button type="button" class="feedback-toggle ratings-breakdown-toggle" id="ratings-toggle-${song.id}">▲</button>
 				</div>
-				<div class="ratings-breakdown-list collapsed" id="ratings-list-${song.id}"></div>
+				<div class="ratings-breakdown-list" id="ratings-list-${song.id}"></div>
 			</div>` : ''}
-			<div class="feedback-section collapsed" id="feedback-section-${song.id}">
+			<div class="feedback-section ${isAdminMode ? '' : 'collapsed'}" id="feedback-section-${song.id}">
 				<div class="feedback-header-row">
 					<h4>Comments</h4>
-					<button type="button" class="feedback-toggle" onclick="toggleFeedback('${song.id}')">▼</button>
+					<button type="button" class="feedback-toggle" onclick="toggleFeedback('${song.id}')">${isAdminMode ? '▲' : '▼'}</button>
 				</div>
-				<div class="feedback-body" id="feedback-body-${song.id}">
+				<div class="feedback-body" id="feedback-body-${song.id}" ${isAdminMode ? '' : 'style="display:none"'}>
 					<div class="feedback-form">
 						<input type="text" id="feedback-name-${song.id}" placeholder="Name (optional)" maxlength="50">
 						<textarea id="feedback-text-${song.id}" placeholder="Write a comment..." maxlength="500"></textarea>
