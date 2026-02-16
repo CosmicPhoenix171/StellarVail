@@ -727,13 +727,17 @@ function loadRatingData(songId) {
 				} else {
 					breakdownList.innerHTML = entries.map(entry => {
 						const name = formatRaterName(entry.userId);
+						const isGuestEntry = entry.userId.startsWith('guest_');
+						const guestTag = isGuestEntry ? '<span class="guest-tag">guest</span>' : '';
 						const stars = '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating);
 						const timeAgo = entry.timestamp ? formatTime(entry.timestamp) : '';
+						const deleteBtn = `<button class="admin-delete-rating" onclick="deleteRating('${songId}', '${entry.userId}')" title="Delete this rating">✕</button>`;
 						return `
-							<div class="rating-entry">
-								<span class="rater-name">${escapeHtml(name)}</span>
+							<div class="rating-entry ${isGuestEntry ? 'guest-entry' : ''}">
+								<span class="rater-name">${escapeHtml(name)}${guestTag}</span>
 								<span class="rater-stars" data-rating="${entry.rating}">${stars}</span>
 								<span class="rater-time">${timeAgo}</span>
+								${deleteBtn}
 							</div>
 						`;
 					}).join('');
@@ -1160,6 +1164,52 @@ function toggleRatingsBreakdown(songId) {
 	if (!list) return;
 	const isCollapsed = list.classList.toggle('collapsed');
 	if (toggle) toggle.textContent = isCollapsed ? '▼' : '▲';
+}
+
+// Admin: delete a specific rating entry from Firebase
+function deleteRating(songId, raterUserId) {
+	if (!isAdminMode || typeof database === 'undefined') return;
+	if (!confirm(`Delete rating from ${formatRaterName(raterUserId)}?`)) return;
+
+	database.ref(`songs/${songId}/ratings/${raterUserId}`).remove()
+		.then(() => console.log(`Deleted rating ${raterUserId} from ${songId}`))
+		.catch(err => console.error('Error deleting rating:', err));
+}
+
+// Admin: purge ALL guest ratings across every song
+function purgeAllGuestRatings() {
+	if (!isAdminMode || typeof database === 'undefined') return;
+	if (!confirm('Delete ALL guest ratings across every song? This cannot be undone.')) return;
+
+	const songsRef = database.ref('songs');
+	songsRef.once('value', snapshot => {
+		const songs = snapshot.val();
+		if (!songs) return;
+
+		const updates = {};
+		let count = 0;
+
+		Object.keys(songs).forEach(songId => {
+			const song = songs[songId];
+			if (song.ratings) {
+				Object.keys(song.ratings).forEach(raterId => {
+					if (raterId.startsWith('guest_')) {
+						updates[`songs/${songId}/ratings/${raterId}`] = null;
+						count++;
+					}
+				});
+			}
+		});
+
+		if (count === 0) {
+			alert('No guest ratings found.');
+			return;
+		}
+
+		database.ref().update(updates)
+			.then(() => alert(`Purged ${count} guest rating(s).`))
+			.catch(err => console.error('Error purging guest ratings:', err));
+	});
 }
 
 function sanitizeUsername(name) {

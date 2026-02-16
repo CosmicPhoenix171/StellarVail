@@ -845,6 +845,52 @@ body {
     border-radius: 4px;
 }
 
+/* Guest entry highlight */
+.rating-entry.guest-entry {
+    border-color: rgba(255, 100, 100, 0.2);
+    background: rgba(255, 50, 50, 0.06);
+}
+
+.guest-tag {
+    display: inline-block;
+    background: rgba(255, 80, 80, 0.15);
+    color: #ff6b6b;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.75em;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Admin delete rating button */
+.admin-delete-rating {
+    border: 1px solid rgba(255, 80, 80, 0.25);
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff6b6b;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px 7px;
+    font-size: 0.85em;
+    margin-left: 4px;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.admin-delete-rating:hover {
+    background: rgba(255, 50, 50, 0.25);
+    border-color: #ff6b6b;
+}
+
+/* Purge all guest ratings button */
+.purge-btn {
+    border-color: rgba(255, 80, 80, 0.3) !important;
+    color: #ff6b6b !important;
+}
+.purge-btn:hover {
+    background: rgba(255, 50, 50, 0.15) !important;
+    border-color: #ff6b6b !important;
+}
+
 .feedback-section {
     margin-top: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
