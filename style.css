@@ -746,8 +746,9 @@ body {
     margin-top: 16px;
     border: 1px solid rgba(189, 0, 255, 0.2);
     border-radius: 16px;
-    padding: 16px;
+    padding: 14px;
     background: rgba(189, 0, 255, 0.05);
+    overflow: hidden;
 }
 
 .ratings-breakdown-header {
@@ -777,6 +778,7 @@ body {
     margin-top: 12px;
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .ratings-breakdown-list.collapsed {
@@ -785,14 +787,16 @@ body {
 
 .rating-entry {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    gap: 4px 8px;
+    padding: 8px 10px;
     background: rgba(255, 255, 255, 0.04);
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    font-size: 0.9em;
+    font-size: 0.85em;
     transition: background 0.2s;
+    overflow: hidden;
 }
 
 .rating-entry:hover {
@@ -802,14 +806,18 @@ body {
 .rater-name {
     color: var(--accent);
     font-weight: 600;
-    min-width: 80px;
     text-transform: capitalize;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 45%;
 }
 
 .rater-stars {
     color: rgba(255, 255, 255, 0.2);
-    font-size: 1.1em;
-    letter-spacing: 1px;
+    font-size: 1em;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
 }
 
 .rater-stars[data-rating="5"] { color: #ffd700; text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
@@ -821,8 +829,9 @@ body {
 .rater-time {
     margin-left: auto;
     color: var(--text-muted);
-    font-size: 0.85em;
+    font-size: 0.8em;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .no-ratings-yet {
@@ -855,10 +864,10 @@ body {
     display: inline-block;
     background: rgba(255, 80, 80, 0.15);
     color: #ff6b6b;
-    padding: 1px 6px;
+    padding: 0 5px;
     border-radius: 999px;
-    font-size: 0.75em;
-    margin-left: 6px;
+    font-size: 0.7em;
+    margin-left: 4px;
     vertical-align: middle;
 }
 
@@ -880,11 +889,12 @@ body {
     color: #ff6b6b;
     border-radius: 6px;
     cursor: pointer;
-    padding: 2px 7px;
-    font-size: 0.85em;
-    margin-left: 4px;
+    padding: 1px 6px;
+    font-size: 0.8em;
+    margin-left: auto;
     transition: background 0.2s, border-color 0.2s;
     flex-shrink: 0;
+    line-height: 1.4;
 }
 
 .admin-delete-rating:hover {
