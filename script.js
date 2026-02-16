@@ -1265,7 +1265,7 @@ function handleLogin() {
 	}
 }
 
-// Transfer ratings from guest account to user account
+// Transfer ratings & feedback from guest account to user account, then delete old guest data
 function transferGuestRatings(oldGuestId, newUserId, callback) {
 	const songsRef = database.ref('songs');
 	
@@ -1279,27 +1279,45 @@ function transferGuestRatings(oldGuestId, newUserId, callback) {
 		const updates = {};
 		let transferCount = 0;
 		
-		// Look through all songs for ratings from the old guest ID
+		// Look through all songs for ratings and feedback from the old guest ID
 		Object.keys(songs).forEach(songId => {
 			const song = songs[songId];
+
+			// Transfer ratings
 			if (song.ratings && song.ratings[oldGuestId]) {
-				// Check if user doesn't already have a rating for this song
 				if (!song.ratings[newUserId]) {
-					// Copy the guest rating to the user account
+					// Move the guest rating to the user account
 					updates[`songs/${songId}/ratings/${newUserId}`] = song.ratings[oldGuestId];
 					transferCount++;
 				}
+				// Delete the old guest rating either way
+				updates[`songs/${songId}/ratings/${oldGuestId}`] = null;
+			}
+
+			// Transfer feedback / comments
+			if (song.feedback && song.feedback[oldGuestId]) {
+				if (!song.feedback[newUserId]) {
+					// Copy feedback and update the stored clientId & displayName
+					const fb = { ...song.feedback[oldGuestId] };
+					fb.clientId = newUserId;
+					if (!fb.displayName || fb.displayName === 'Anonymous' || fb.displayName.startsWith('Guest')) {
+						fb.displayName = localStorage.getItem('sv_username') || fb.displayName;
+					}
+					updates[`songs/${songId}/feedback/${newUserId}`] = fb;
+				}
+				// Delete the old guest feedback either way
+				updates[`songs/${songId}/feedback/${oldGuestId}`] = null;
 			}
 		});
 		
 		if (Object.keys(updates).length > 0) {
 			database.ref().update(updates)
 				.then(() => {
-					console.log(`Transferred ${transferCount} ratings to new account`);
+					console.log(`Transferred ${transferCount} ratings to new account and cleaned up guest data`);
 					callback();
 				})
 				.catch((err) => {
-					console.error('Error transferring ratings:', err);
+					console.error('Error transferring guest data:', err);
 					callback();
 				});
 		} else {
