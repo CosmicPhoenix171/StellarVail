@@ -15,6 +15,7 @@ let starBoostRaf = null;
 let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
+let pendingRating = null; // { songId, rating } stored when a guest tries to rate
 const isAdminMode = window.location.pathname.includes('/admin');
 const basePath = isAdminMode ? '../' : '';
 
@@ -814,8 +815,19 @@ function checkIfUserRatedSong(songId) {
 	});
 }
 
+function isGuest() {
+	return !localStorage.getItem('sv_username');
+}
+
 function rateSong(songId, rating) {
 	if (typeof database === 'undefined') return;
+
+	// If the user is a guest, prompt them to create a username first
+	if (isGuest() && !isAdminMode) {
+		pendingRating = { songId, rating };
+		showLoginPopup(true); // true = triggered by rating
+		return;
+	}
 
 	const ratingRef = database.ref(`songs/${songId}/ratings/${clientId}`);
 	ratingRef
@@ -1177,13 +1189,23 @@ function updateUserDisplay() {
 	}
 }
 
-function showLoginPopup() {
+function showLoginPopup(fromRating) {
 	const popup = document.getElementById('login-popup');
 	const usernameInput = document.getElementById('login-username');
 	const logoutBtn = document.getElementById('logout-btn');
 	const statusEl = document.getElementById('login-status');
+	const hintEl = popup ? popup.querySelector('.login-hint') : null;
 	
 	if (!popup) return;
+	
+	// Update hint text based on context
+	if (hintEl) {
+		if (fromRating) {
+			hintEl.textContent = 'Create a username to rate songs and save your ratings!';
+		} else {
+			hintEl.textContent = 'Enter a username to sync your ratings across devices';
+		}
+	}
 	
 	// Check if already signed in
 	const currentUsername = localStorage.getItem('sv_username');
@@ -1220,6 +1242,8 @@ function hideLoginPopup() {
 	if (popup) {
 		popup.style.display = 'none';
 	}
+	// Clear any pending rating if user cancelled
+	pendingRating = null;
 }
 
 function handleLogin() {
@@ -1256,13 +1280,23 @@ function handleLogin() {
 		transferGuestRatings(oldGuestId, newUserId, () => {
 			statusEl.textContent = `Signed in as ${username}!`;
 			updateUserDisplay();
+			applyPendingRating();
 			setTimeout(() => hideLoginPopup(), 1000);
 		});
 	} else {
 		statusEl.textContent = `Signed in as ${username}!`;
 		updateUserDisplay();
+		applyPendingRating();
 		setTimeout(() => hideLoginPopup(), 1000);
 	}
+}
+
+// Apply a rating that was deferred while the user was still a guest
+function applyPendingRating() {
+	if (!pendingRating) return;
+	const { songId, rating } = pendingRating;
+	pendingRating = null;
+	rateSong(songId, rating);
 }
 
 // Transfer ratings & feedback from guest account to user account, then delete old guest data
