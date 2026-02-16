@@ -862,6 +862,17 @@ body {
     vertical-align: middle;
 }
 
+/* Sign-in nudge link inside rating message */
+.sign-in-link {
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+}
+.sign-in-link:hover {
+    color: #fff;
+}
+
 /* Admin delete rating button */
 .admin-delete-rating {
     border: 1px solid rgba(255, 80, 80, 0.25);

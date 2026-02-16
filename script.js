@@ -698,9 +698,14 @@ function loadRatingData(songId) {
 		const ratings = snapshot.val();
 		let sum = 0;
 		let count = 0;
+		let guestCount = 0;
 
 		if (ratings) {
-			Object.values(ratings).forEach((rating) => {
+			Object.entries(ratings).forEach(([key, rating]) => {
+				if (key.startsWith('guest_')) {
+					guestCount++;
+					return; // Skip guests in the score
+				}
 				sum += rating.rating;
 				count += 1;
 			});
@@ -709,8 +714,9 @@ function loadRatingData(songId) {
 		const average = count > 0 ? (sum / count).toFixed(1) : '0.0';
 		const avgElement = document.getElementById(`avg-rating-${songId}`);
 		const countElement = document.getElementById(`rating-count-${songId}`);
+		const pendingHint = guestCount > 0 ? ` · ${guestCount} pending` : '';
 		if (avgElement) avgElement.textContent = average;
-		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'})`;
+		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'}${isAdminMode ? pendingHint : ''})`;
 
 		updateStarsDisplay(songId, parseFloat(average));
 
@@ -728,7 +734,7 @@ function loadRatingData(songId) {
 					breakdownList.innerHTML = entries.map(entry => {
 						const name = formatRaterName(entry.userId);
 						const isGuestEntry = entry.userId.startsWith('guest_');
-						const guestTag = isGuestEntry ? '<span class="guest-tag">guest</span>' : '';
+						const guestTag = isGuestEntry ? '<span class="guest-tag">pending</span>' : '';
 						const stars = '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating);
 						const timeAgo = entry.timestamp ? formatTime(entry.timestamp) : '';
 						const deleteBtn = `<button class="admin-delete-rating" onclick="deleteRating('${songId}', '${entry.userId}')" title="Delete this rating">✕</button>`;
