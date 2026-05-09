@@ -771,7 +771,8 @@ function markSongHeard(baseId) {
 	}
 }
 
-// Mark a specific version as heard/rated and remove its button glow
+// Mark a specific version as heard/rated and remove its button glow.
+// Only removes the card NEW badge once every version has been heard/rated.
 function markVersionHeard(vid, songBaseId, versionIndex) {
 	if (isAdminMode || heardVersions.has(vid)) return;
 	heardVersions.add(vid);
@@ -780,6 +781,13 @@ function markVersionHeard(vid, songBaseId, versionIndex) {
 		`button.play-button[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`
 	);
 	if (btn) btn.classList.remove('version-new');
+
+	// Remove the card-level NEW badge only when every version is now heard/rated
+	const song = songsData.find(s => s.id === songBaseId);
+	const versionCount = song?.versions ? song.versions.length : 1;
+	const allHeard = Array.from({ length: versionCount }, (_, i) => versionId(song, i))
+		.every(v => heardVersions.has(v));
+	if (allHeard) markSongHeard(songBaseId);
 }
 
 function incrementListenCount(songId) {
@@ -789,13 +797,11 @@ function incrementListenCount(songId) {
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.transaction((currentCount) => (currentCount || 0) + 1);
 
-	// Resolve the base song and mark as heard
+	// Resolve the base song and mark the specific version as heard
 	const baseSong = songsData.find(s =>
 		s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
 	);
 	if (baseSong) {
-		markSongHeard(baseSong.id);
-		// Also mark the specific version as heard
 		const vi = baseSong.versions
 			? baseSong.versions.findIndex((_, i) => versionId(baseSong, i) === songId)
 			: 0;
@@ -971,6 +977,16 @@ function checkUserHasRated(songId) {
 			// Show user's current rating on the stars
 			const userRating = snapshot.val().rating;
 			highlightUserRating(songId, userRating);
+			// User already rated — treat as heard, remove version glow (card badge only goes if all versions heard)
+			const ratedBase = songsData.find(s =>
+				s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
+			);
+			if (ratedBase) {
+				const rvi = ratedBase.versions
+					? ratedBase.versions.findIndex((_, i) => versionId(ratedBase, i) === songId)
+					: 0;
+				markVersionHeard(songId, ratedBase.id, rvi >= 0 ? rvi : 0);
+			}
 		}
 	});
 }
@@ -1050,7 +1066,6 @@ function rateSong(songId, rating) {
 				s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
 			);
 			if (ratedBaseSong) {
-				markSongHeard(ratedBaseSong.id);
 				const rvi = ratedBaseSong.versions
 					? ratedBaseSong.versions.findIndex((_, i) => versionId(ratedBaseSong, i) === songId)
 					: 0;
