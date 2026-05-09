@@ -19,6 +19,24 @@ let pendingRating = null; // { songId, rating } stored when a guest tries to rat
 const isAdminMode = window.location.pathname.includes('/admin');
 const basePath = isAdminMode ? '../' : '';
 
+// Tracks selected version index per song card: { [songBaseId]: index }
+const selectedVersions = {};
+
+// Returns the Firebase ID for a given song + version index
+function versionId(song, versionIndex) {
+	const vi = versionIndex ?? (selectedVersions[song.id] ?? 0);
+	if (!song.versions || song.versions.length <= 1 || vi === 0) return song.id;
+	const label = song.versions[vi].label.toLowerCase().replace(/[^a-z0-9]/g, '');
+	return `${song.id}-${label}`;
+}
+
+// Returns the audio filename for a given song + version index
+function versionFilename(song, versionIndex) {
+	const vi = versionIndex ?? (selectedVersions[song.id] ?? 0);
+	if (song.versions && song.versions[vi]) return song.versions[vi].filename;
+	return song.filename;
+}
+
 // Format date string (YYYY-MM-DD) to readable format
 function formatDate(dateString) {
     if (!dateString) return '';
@@ -280,33 +298,42 @@ const legacyIdMap = {
 
 async function loadSongs() {
 	try {
-		const response = await fetch(`${basePath}songs.json`);
-		const songs = await response.json();
-		
-		// Get today's date for songs without dateAdded
+		const indexRes = await fetch(`${basePath}music/index.json`);
+		const folders = await indexRes.json();
+
+		// Load each song's info.json from its folder
 		const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-		
-		// Auto-generate id, title, and date from filename
-		songsData = songs
-			.filter(song => song.filename && song.filename !== '.wav') // Skip empty entries
-			.map(song => {
-				const baseName = song.filename.replace(/\.wav$/i, '');
-				// Remove characters not allowed in Firebase paths or that break HTML/JS: . # $ [ ] ' "
-				const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
-				// Use legacy ID if available to preserve Firebase data
-				const id = song.id || legacyIdMap[song.filename] || safeId;
-				return {
-					id: id,
-					title: song.title || baseName,
-					filename: song.filename,
-					dateAdded: song.dateAdded || today
-				};
-			});
-		
+
+		const results = await Promise.all(
+			folders.map(async (folder) => {
+				try {
+					const infoRes = await fetch(`${basePath}music/${folder}/info.json`);
+					const info = await infoRes.json();
+					const filename = info.filename;
+					const baseName = filename.replace(/\.wav$/i, '');
+					const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
+					const id = info.id || legacyIdMap[filename] || safeId;
+					return {
+						id,
+						title: info.title || baseName,
+						filename,
+						folder,
+						dateAdded: info.dateAdded || today,
+						artist: info.artist || '',
+						description: info.description || ''
+					};
+				} catch (err) {
+					console.warn(`Could not load info.json for folder "${folder}":`, err);
+					return null;
+				}
+			})
+		);
+
+		songsData = results.filter(Boolean);
 		renderSongs();
 	} catch (error) {
 		console.error('Error loading songs:', error);
-		songsContainer.innerHTML = '<p style="color: white;">Error loading songs. Please check songs.json file.</p>';
+		songsContainer.innerHTML = '<p style="color: white;">Error loading songs. Please check music/index.json.</p>';
 	}
 }
 
@@ -314,13 +341,19 @@ function renderSongs() {
 	songsContainer.innerHTML = '';
 
 	songsData.forEach((song) => {
+		selectedVersions[song.id] = 0; // default to first version
 		const songCard = createSongCard(song);
 		songsContainer.appendChild(songCard);
 
-		loadRatingData(song.id);
-		loadListenCount(song.id);
-		loadFeedback(song.id);
-		checkUserHasRated(song.id);
+		// Load Firebase data for every version of the song
+		const versionCount = song.versions ? song.versions.length : 1;
+		for (let i = 0; i < versionCount; i++) {
+			const vid = versionId(song, i);
+			loadRatingData(vid, song.id, i);
+			loadListenCount(vid);
+			loadFeedback(vid);
+			checkUserHasRated(vid);
+		}
 	});
 	
 	// Sort immediately after render (especially for date sorting)
@@ -341,172 +374,243 @@ function createSongCard(song) {
 	const descriptionHtml = descriptionIsPlaceholder ? '' : `<p class="description">${song.description}</p>`;
 	const detailHeaderHtml = artistHtml || descriptionHtml ? `<div class="detail-header">${artistHtml}${descriptionHtml}</div>` : '';
 	const ratingHiddenClass = isAdminMode ? '' : 'rating-hidden';
-	
+
 	// Format date for display
 	const dateAdded = song.dateAdded ? formatDate(song.dateAdded) : '';
 	const dateHtml = dateAdded ? `<span class="date-added">${dateAdded}</span>` : '';
-	
-	card.innerHTML = `
-		<div class="song-summary">
-			<div class="summary-info" onclick="loadSongToPlayer('${song.id}')">
-				<h3>${song.title}</h3>
-				<div class="summary-metrics">
-					${dateHtml}
-					<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${song.id}">
-						<span class="avg-rating" id="avg-rating-${song.id}">0.0</span>
-						<span class="rating-count" id="rating-count-${song.id}">(0 ratings)</span>
-					</div>
-					<span class="listen-count" id="listen-count-${song.id}">0 listens</span>
-					<span class="comment-count" id="comment-count-${song.id}" title="Comments" onclick="event.stopPropagation(); toggleFeedback('${song.id}')">
-						<svg class="comment-bubble" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-						</svg>
-						<span class="comment-number">0</span>
-					</span>
+
+	// Build version tabs HTML (only if more than one version)
+	const hasVersions = song.versions && song.versions.length > 1;
+	const versionTabsHtml = hasVersions ? `
+		<div class="version-tabs" id="version-tabs-${song.id}">
+			${song.versions.map((v, i) => `
+				<button class="version-tab${i === 0 ? ' active' : ''}"
+					data-version-index="${i}"
+					onclick="selectVersion('${song.id}', ${i})">
+					${v.label}
+				</button>
+			`).join('')}
+		</div>` : '';
+
+	// Version panels — one per version, each with its own metrics/rating/comments
+	const versionPanelsHtml = (song.versions || [{ filename: song.filename, label: '' }]).map((v, i) => {
+		const vid = versionId(song, i);
+		return `
+		<div class="version-panel${i === 0 ? ' active' : ''}" id="version-panel-${song.id}-${i}">
+			<div class="summary-metrics">
+				${i === 0 ? dateHtml : ''}
+				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${vid}">
+					<span class="avg-rating" id="avg-rating-${vid}">0.0</span>
+					<span class="rating-count" id="rating-count-${vid}">(0 ratings)</span>
 				</div>
+				<span class="listen-count" id="listen-count-${vid}">0 listens</span>
+				<span class="comment-count" id="comment-count-${vid}" title="Comments" onclick="event.stopPropagation(); toggleFeedback('${vid}')">
+					<svg class="comment-bubble" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+					</svg>
+					<span class="comment-number">0</span>
+				</span>
 			</div>
-		</div>
-		<button class="play-button" onclick="togglePlaySong('${song.id}')" data-song-id="${song.id}">
-			▶ Play
-		</button>
-		<div class="detail-section">
-			${detailHeaderHtml}
-			${isAdminMode ? '' : `<div class="rating-section">
-				<div class="rating-stars" id="rating-stars-${song.id}">
-					${[1, 2, 3, 4, 5].map((i) => '<span class="star" data-rating="' + i + '" onclick="rateSong(\'' + song.id + '\', ' + i + ')">★</span>').join('')}
-				</div>
-				<p class="rating-message" id="rating-message-${song.id}">Click stars to rate</p>
-			</div>`}
-			${isAdminMode ? `<div class="ratings-breakdown" id="ratings-breakdown-${song.id}">
-				<div class="ratings-breakdown-header" onclick="toggleRatingsBreakdown('${song.id}')">
-					<h4>👤 Individual Ratings</h4>
-					<button type="button" class="feedback-toggle ratings-breakdown-toggle" id="ratings-toggle-${song.id}">▲</button>
-				</div>
-				<div class="ratings-breakdown-list" id="ratings-list-${song.id}"></div>
-			</div>` : ''}
-			<div class="feedback-section ${isAdminMode ? '' : 'collapsed'}" id="feedback-section-${song.id}">
-				<div class="feedback-header-row">
-					<h4>Comments</h4>
-					<button type="button" class="feedback-toggle" onclick="toggleFeedback('${song.id}')">${isAdminMode ? '▲' : '▼'}</button>
-				</div>
-				<div class="feedback-body" id="feedback-body-${song.id}" ${isAdminMode ? '' : 'style="display:none"'}>
-					<div class="feedback-form">
-						<input type="text" id="feedback-name-${song.id}" placeholder="Name (optional)" maxlength="50">
-						<textarea id="feedback-text-${song.id}" placeholder="Write a comment..." maxlength="500"></textarea>
-						<input type="hidden" id="feedback-timestamp-${song.id}" value="">
-						<div class="feedback-actions">
-							<button type="button" class="timestamp-btn" onclick="addTimestamp('${song.id}')" title="Add current timestamp">⏱ Timestamp</button>
-							<button class="submit-btn" onclick="submitFeedback('${song.id}')">Post</button>
+			<button class="play-button version-play-btn" onclick="togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
+				▶ Play${hasVersions ? ' ' + v.label : ''}
+			</button>
+			<div class="detail-section" id="detail-section-${vid}">
+				${i === 0 ? detailHeaderHtml : ''}
+				${isAdminMode ? '' : `<div class="rating-section">
+					<div class="rating-stars" id="rating-stars-${vid}">
+						${[1, 2, 3, 4, 5].map((n) => '<span class="star" data-rating="' + n + '" onclick="rateSong(\'' + vid + '\', ' + n + ')">★</span>').join('')}
+					</div>
+					<p class="rating-message" id="rating-message-${vid}">Click stars to rate</p>
+				</div>`}
+				${isAdminMode ? `<div class="ratings-breakdown" id="ratings-breakdown-${vid}">
+					<div class="ratings-breakdown-header" onclick="toggleRatingsBreakdown('${vid}')">
+						<h4>👤 Individual Ratings</h4>
+						<button type="button" class="feedback-toggle ratings-breakdown-toggle" id="ratings-toggle-${vid}">▲</button>
+					</div>
+					<div class="ratings-breakdown-list" id="ratings-list-${vid}"></div>
+				</div>` : ''}
+				<div class="feedback-section ${isAdminMode ? '' : 'collapsed'}" id="feedback-section-${vid}">
+					<div class="feedback-header-row">
+						<h4>Comments</h4>
+						<button type="button" class="feedback-toggle" onclick="toggleFeedback('${vid}')">${isAdminMode ? '▲' : '▼'}</button>
+					</div>
+					<div class="feedback-body" id="feedback-body-${vid}" ${isAdminMode ? '' : 'style="display:none"'}>
+						<div class="feedback-form">
+							<input type="text" id="feedback-name-${vid}" placeholder="Name (optional)" maxlength="50">
+							<textarea id="feedback-text-${vid}" placeholder="Write a comment..." maxlength="500"></textarea>
+							<input type="hidden" id="feedback-timestamp-${vid}" value="">
+							<div class="feedback-actions">
+								<button type="button" class="timestamp-btn" onclick="addTimestamp('${vid}')" title="Add current timestamp">⏱ Timestamp</button>
+								<button class="submit-btn" onclick="submitFeedback('${vid}')">Post</button>
+							</div>
+						</div>
+						<div class="feedback-list" id="feedback-list-${vid}">
+							<p class="no-feedback">No comments yet. Be the first!</p>
 						</div>
 					</div>
-					<div class="feedback-list" id="feedback-list-${song.id}">
-						<p class="no-feedback">No comments yet. Be the first!</p>
-					</div>
 				</div>
 			</div>
+		</div>`;
+	}).join('');
+
+	card.innerHTML = `
+		<div class="song-summary" onclick="loadSongToPlayer('${song.id}')">
+			<div class="summary-info">
+				<h3>${song.title}</h3>
+			</div>
 		</div>
+		${versionTabsHtml}
+		${versionPanelsHtml}
 	`;
 	return card;
 }
 
+// Switch which version is shown/highlighted on a card
+function selectVersion(songBaseId, index) {
+	selectedVersions[songBaseId] = index;
+
+	// Update tab active state
+	const tabs = document.querySelectorAll(`#version-tabs-${songBaseId} .version-tab`);
+	tabs.forEach((t, i) => t.classList.toggle('active', i === index));
+
+	// Show only the selected version panel
+	const song = songsData.find(s => s.id === songBaseId);
+	if (!song || !song.versions) return;
+	song.versions.forEach((_, i) => {
+		const panel = document.getElementById(`version-panel-${songBaseId}-${i}`);
+		if (panel) panel.classList.toggle('active', i === index);
+	});
+
+	// If this song is currently playing, switch the audio to the selected version
+	if (currentSongId === songBaseId || currentSongId === versionId(song, index)) {
+		const filename = versionFilename(song, index);
+		const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+		const wasPaused = audioPlayer.paused;
+		audioPlayer.src = `${basePath}music/${folder}/${filename}`;
+		if (!wasPaused) audioPlayer.play().catch(() => {});
+		currentSongId = versionId(song, index);
+	}
+}
+
 // ===== PLAYBACK CONTROLS =====
 
+// Resolve the song object and version index from a songBaseId or versionId
+function resolveSongAndVersion(songIdOrVersionId) {
+	// Try exact base id match first
+	let song = songsData.find(s => s.id === songIdOrVersionId);
+	if (song) return { song, vi: selectedVersions[song.id] ?? 0 };
+	// Try matching as a version id: {baseId}-{label}
+	song = songsData.find(s => s.versions && s.versions.some((_, i) => versionId(s, i) === songIdOrVersionId));
+	if (song) {
+		const vi = song.versions.findIndex((_, i) => versionId(song, i) === songIdOrVersionId);
+		return { song, vi };
+	}
+	return null;
+}
+
 // Load a song into the player without playing it
-function loadSongToPlayer(songId) {
-	// If already loaded, do nothing
-	if (currentSongId === songId) return;
-	
-	const song = songsData.find((s) => s.id === songId);
+function loadSongToPlayer(songBaseId, versionIndex) {
+	const song = songsData.find(s => s.id === songBaseId);
 	if (!song) return;
+
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vid = versionId(song, vi);
+
+	if (currentSongId === vid) return;
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
-	// Set the audio source but don't play
-	audioPlayer.src = `${basePath}music/${song.filename}`;
+	const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+	const filename = versionFilename(song, vi);
+	audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 
-	listenCreditSongId = songId;
+	listenCreditSongId = vid;
 	listenCredited = false;
 	listenInvalidated = false;
 	lastPlaybackTime = 0;
 	currentSongRated = false;
-	
-	// Check if user already rated this song
-	checkIfUserRatedSong(songId);
-	
-	// Move card to Now Playing panel
+
+	checkIfUserRatedSong(vid);
 	moveCardToPlayer(song.id);
 
-	// Reset all play buttons
 	document.querySelectorAll('.play-button').forEach((btn) => {
 		btn.classList.remove('playing');
-		btn.textContent = '▶ Play';
+		btn.textContent = btn.dataset.versionIndex !== undefined
+			? `▶ Play ${song.versions?.[btn.dataset.versionIndex]?.label || ''}`.trim()
+			: '▶ Play';
 	});
 
-	currentSongId = songId;
+	currentSongId = vid;
 }
 
-function togglePlaySong(songId) {
-	// If this is the current song, toggle play/pause
-	if (currentSongId === songId) {
+function togglePlaySong(songBaseId, versionIndex) {
+	const song = songsData.find(s => s.id === songBaseId);
+	if (!song) return;
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vid = versionId(song, vi);
+
+	if (currentSongId === vid) {
 		if (audioPlayer.paused) {
-			audioPlayer.play().catch((err) => console.error('Playback error:', err));
-			updatePlayButton(songId, true);
+			audioPlayer.play().catch(err => console.error('Playback error:', err));
+			updatePlayButton(songBaseId, vi, true);
 		} else {
 			audioPlayer.pause();
-			updatePlayButton(songId, false);
+			updatePlayButton(songBaseId, vi, false);
 		}
 		return;
 	}
-	
-	// Otherwise, play the new song
-	playSong(songId);
+
+	playSong(songBaseId, vi);
 }
 
-function updatePlayButton(songId, isPlaying) {
-	const button = document.querySelector(`button[data-song-id="${songId}"]`);
-	if (button) {
-		if (isPlaying) {
-			button.classList.add('playing');
-			button.textContent = '⏸ Pause';
-		} else {
-			button.classList.add('playing'); // Keep playing class to show it's the current song
-			button.textContent = '▶ Resume';
-		}
+function updatePlayButton(songBaseId, versionIndex, isPlaying) {
+	const btn = document.querySelector(`button[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`)
+		|| document.querySelector(`button.play-button[data-song-id="${songBaseId}"]`);
+	if (!btn) return;
+	const song = songsData.find(s => s.id === songBaseId);
+	const label = song?.versions?.[versionIndex]?.label || '';
+	btn.classList.add('playing');
+	if (isPlaying) {
+		btn.textContent = `⏸ Pause${label ? ' ' + label : ''}`;
+	} else {
+		btn.textContent = `▶ Resume${label ? ' ' + label : ''}`;
 	}
 }
 
-function playSong(songId) {
-	const song = songsData.find((s) => s.id === songId);
+function playSong(songBaseId, versionIndex) {
+	const song = songsData.find(s => s.id === songBaseId);
 	if (!song) return;
+
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vid = versionId(song, vi);
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
-	audioPlayer.src = `${basePath}music/${song.filename}`;
-	audioPlayer.play().catch((err) => console.error('Playback error:', err));
+	const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+	const filename = versionFilename(song, vi);
+	audioPlayer.src = `${basePath}music/${folder}/${filename}`;
+	audioPlayer.play().catch(err => console.error('Playback error:', err));
 
-	listenCreditSongId = songId;
+	listenCreditSongId = vid;
 	listenCredited = false;
-	listenInvalidated = false; // Reset skip detection for new song
-	lastPlaybackTime = 0; // Reset playback position tracker
-	currentSongRated = false; // Reset rating status for new song
-	
-	// Check if user already rated this song
-	checkIfUserRatedSong(songId);
-	
-	updateNowPlayingCard(song);
+	listenInvalidated = false;
+	lastPlaybackTime = 0;
+	currentSongRated = false;
 
+	checkIfUserRatedSong(vid);
+	moveCardToPlayer(song.id);
+
+	// Reset all play buttons to default state
 	document.querySelectorAll('.play-button').forEach((btn) => {
 		btn.classList.remove('playing');
-		btn.textContent = '▶ Play';
+		const bSong = songsData.find(s => s.id === btn.dataset.songId);
+		const bVi = parseInt(btn.dataset.versionIndex ?? 0);
+		const bLabel = bSong?.versions?.[bVi]?.label || '';
+		btn.textContent = `▶ Play${bLabel ? ' ' + bLabel : ''}`;
 	});
 
-	const currentButton = document.querySelector(`button[data-song-id="${songId}"]`);
-	if (currentButton) {
-		currentButton.classList.add('playing');
-		currentButton.textContent = '⏸ Pause';
-	}
-
-	currentSongId = songId;
+	updatePlayButton(songBaseId, vi, true);
+	currentSongId = vid;
 }
 
 function updateNowPlayingCard(song) {
@@ -561,19 +665,23 @@ function playNextSong() {
 		return;
 	}
 
-	// Get sorted order from DOM - include placeholder cards to find current song's position
+	// Get sorted order from DOM - use base song IDs (placeholders represent active card)
 	const allCards = Array.from(songsContainer.querySelectorAll('.song-card'));
-	// Map to song IDs - for placeholder, use the active card's ID
-	const sortedIds = allCards.map(card => {
+	const sortedBaseIds = allCards.map(card => {
 		if (card.classList.contains('placeholder-card') && activeCardElement) {
 			return activeCardElement.dataset.songId;
 		}
 		return card.dataset.songId;
 	});
-	
-	const currentIndex = sortedIds.indexOf(currentSongId);
-	const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % sortedIds.length;
-	playSong(sortedIds[nextIndex]);
+
+	// currentSongId might be a versionId — find the base song
+	const currentBaseSong = songsData.find(s =>
+		s.id === currentSongId || (s.versions && s.versions.some((_, i) => versionId(s, i) === currentSongId))
+	);
+	const currentBaseId = currentBaseSong?.id;
+	const currentIndex = sortedBaseIds.indexOf(currentBaseId);
+	const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % sortedBaseIds.length;
+	playSong(sortedBaseIds[nextIndex]);
 }
 
 function playRandomSong() {
@@ -690,8 +798,10 @@ function stopStarBoost() {
 }
 
 // ===== RATINGS =====
-function loadRatingData(songId) {
+function loadRatingData(songId, songBaseId, versionIndex) {
 	if (typeof database === 'undefined') return;
+	// songBaseId is used to aggregate sort stats (use the base song id for card sorting)
+	const statKey = songBaseId || songId;
 
 	const ratingsRef = database.ref(`songs/${songId}/ratings`);
 	ratingsRef.on('value', (snapshot) => {
@@ -751,9 +861,12 @@ function loadRatingData(songId) {
 			}
 		}
 		
-		// Track for sorting
-		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
-		songStats[songId].rating = parseFloat(average);
+		// Track for sorting — aggregate across all versions for card-level sort
+		if (!songStats[statKey]) songStats[statKey] = { rating: 0, listens: 0 };
+		// For multi-version songs, use the highest-rated version for sorting
+		if (parseFloat(average) > (songStats[statKey].rating || 0)) {
+			songStats[statKey].rating = parseFloat(average);
+		}
 		debouncedSortSongs();
 	});
 }
@@ -878,10 +991,12 @@ function showRatingPopup() {
 	
 	if (!popup || !currentSongId) return;
 	
-	// Get current song title
-	const currentSong = allSongs.find(s => s.id === currentSongId);
-	if (songTitle && currentSong) {
-		songTitle.textContent = currentSong.title;
+	// Get current song title (currentSongId may be a versionId)
+	const resolved = resolveSongAndVersion(currentSongId);
+	if (songTitle && resolved) {
+		const { song, vi } = resolved;
+		const vLabel = song.versions?.[vi]?.label;
+		songTitle.textContent = vLabel ? `${song.title} — ${vLabel}` : song.title;
 	}
 	
 	// Reset stars

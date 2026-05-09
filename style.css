@@ -687,19 +687,6 @@ body {
 .song-card .artist { color: var(--text-muted); font-size: 0.95em; }
 .song-card .description { font-size: 0.9em; color: rgba(255,255,255,0.7); line-height: 1.4; }
 
-.detail-section {
-    display: none;
-    margin-top: 12px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-direction: column;
-    gap: 16px;
-}
-
-.song-card.in-now-playing .detail-section {
-    display: flex;
-}
-
 .song-card.in-now-playing .song-summary {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 16px;
@@ -726,6 +713,65 @@ body {
 .play-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 243, 255, 0.4);
+}
+
+/* ===== VERSION TABS ===== */
+.version-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+
+.version-tab {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.version-tab:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+    background: rgba(0, 243, 255, 0.1);
+}
+
+.version-tab.active {
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.25), rgba(189, 0, 255, 0.2));
+    border-color: var(--accent);
+    color: var(--text-main);
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.2);
+}
+
+/* ===== VERSION PANELS ===== */
+.version-panel {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.version-panel.active {
+    display: flex;
+}
+
+/* detail-section is shown only when card is in Now Playing */
+.version-panel .detail-section {
+    display: none;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-direction: column;
+    gap: 16px;
+}
+
+.song-card.in-now-playing .version-panel.active .detail-section {
+    display: flex;
 }
 
 .rating-section {

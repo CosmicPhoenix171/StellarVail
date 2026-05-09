@@ -1,67 +1,24 @@
 [
-    {   "filename": "Tik.wav",
-        "dateAdded": "December 5, 2025"},
-
-    {   "filename": "before morning rise.wav",
-        "dateAdded": "October 8, 2025"},
-
-    {   "filename": "Broken.wav",
-        "dateAdded": "August 12, 2025"},
-
-    {   "filename": "1 Unread.wav",
-        "dateAdded": "August 14, 2025"},
-
-    {   "filename": "Chemical  Beat.wav",
-        "dateAdded": "July 4, 2025"},
-
-    {   "filename": "Dream escape.wav",
-        "dateAdded": "August 5, 2025"},
-
-    {   "filename": "Emotion.wav",
-        "dateAdded": "September 26, 2025"},
-
-    {   "filename": "fantasy or reality.wav",
-        "dateAdded": "July 29, 2025"},
-
-    {   "filename": "Not enough.wav",
-        "dateAdded": "October 23, 2025"},
-
-    {   "filename": "where.wav",
-        "dateAdded": "September 26, 2025"},
-
-    {   "filename": "Burn it P.M.E.L.V.wav",
-        "dateAdded": "January 1, 2026"},
-
-    {   "filename": "burn-it V2.wav",
-        "dateAdded": "January 16, 2026 "},
-
-    {   "filename": "Clockwork.wav",
-        "dateAdded": "January 3, 2026"},
-
-    {   "filename": "Dreamloop.wav",
-        "dateAdded": "December 19, 2025 "},
-
-    {   "filename": "Found you.wav",
-        "dateAdded": "January 30, 2026"},
-
-    {   "filename": "Hide Away V2.wav",
-        "dateAdded": "January 30, 2026"},
-
-    {   "filename": "I know.wav",
-        "dateAdded": "December 25, 2025"},
-
-    {   "filename": "I'm doing fine.wav",
-        "dateAdded": "December 16, 2025"},
-
-    {   "filename": "My Way.wav",
-        "dateAdded": "January 13, 2026"},
-
-    {   "filename": "Romance.exe V2.wav",
-        "dateAdded": "January 13, 2026"},
-
-    {   "filename": "Take the chance.wav",
-        "dateAdded": "December 30, 2025"},
-
-    {   "filename": "Toxic tears.wav",
-        "dateAdded": "January 3, 2026"}
+    { "folder": "Tik" },
+    { "folder": "before morning rise" },
+    { "folder": "Broken" },
+    { "folder": "1 Unread" },
+    { "folder": "Chemical  Beat" },
+    { "folder": "Dream escape" },
+    { "folder": "Emotion" },
+    { "folder": "fantasy or reality" },
+    { "folder": "Not enough" },
+    { "folder": "where" },
+    { "folder": "Burn it P.M.E.L.V" },
+    { "folder": "burn-it V2" },
+    { "folder": "Clockwork" },
+    { "folder": "Dreamloop" },
+    { "folder": "Found you" },
+    { "folder": "Hide Away V2" },
+    { "folder": "I know" },
+    { "folder": "I'm doing fine" },
+    { "folder": "My Way" },
+    { "folder": "Romance.exe V2" },
+    { "folder": "Take the chance" },
+    { "folder": "Toxic tears" }
 ]
