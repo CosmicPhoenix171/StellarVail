@@ -19,6 +19,9 @@ let pendingRating = null; // { songId, rating } stored when a guest tries to rat
 const isAdminMode = window.location.pathname.includes('/admin');
 const basePath = isAdminMode ? '../' : '';
 
+// Songs the current listener has heard (any version). Persisted in localStorage.
+const heardSongs = new Set(JSON.parse(localStorage.getItem('sv_heard') || '[]'));
+
 // Tracks selected version index per song card: { [songBaseId]: index }
 const selectedVersions = {};
 
@@ -320,7 +323,8 @@ async function loadSongs() {
 						folder,
 						dateAdded: info.dateAdded || today,
 						artist: info.artist || '',
-						description: info.description || ''
+						description: info.description || '',
+						versions: info.versions || null
 					};
 				} catch (err) {
 					console.warn(`Could not load info.json for folder "${folder}":`, err);
@@ -362,7 +366,8 @@ function renderSongs() {
 
 function createSongCard(song) {
 	const card = document.createElement('div');
-	card.className = 'song-card';
+	const isNew = !heardSongs.has(song.id) && !isAdminMode;
+	card.className = `song-card${isNew ? ' is-new' : ''}`;
 	card.id = `card-${song.id}`;
 	card.dataset.songId = song.id;
 
@@ -453,7 +458,10 @@ function createSongCard(song) {
 		</div>`;
 	}).join('');
 
+	const newBadgeHtml = (!heardSongs.has(song.id) && !isAdminMode)
+		? `<div class="new-badge">NEW</div>` : '';
 	card.innerHTML = `
+		${newBadgeHtml}
 		<div class="song-summary" onclick="loadSongToPlayer('${song.id}')">
 			<div class="summary-info">
 				<h3>${song.title}</h3>
@@ -740,6 +748,21 @@ function incrementListenCount(songId) {
 
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.transaction((currentCount) => (currentCount || 0) + 1);
+
+	// Mark base song as heard and strip the NEW badge/animation
+	const baseSong = songsData.find(s =>
+		s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
+	);
+	if (baseSong && !heardSongs.has(baseSong.id)) {
+		heardSongs.add(baseSong.id);
+		localStorage.setItem('sv_heard', JSON.stringify([...heardSongs]));
+		const card = document.getElementById(`card-${baseSong.id}`);
+		if (card) {
+			card.classList.remove('is-new');
+			const badge = card.querySelector('.new-badge');
+			if (badge) badge.remove();
+		}
+	}
 }
 
 // ===== STAR BOOST (AUDIO REACTIVE) =====
