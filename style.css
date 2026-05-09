@@ -657,9 +657,7 @@ body {
 }
 
 .summary-rating.rating-hidden {
-    filter: blur(8px);
-    opacity: 0.6;
-    user-select: none;
+    visibility: hidden;
     pointer-events: none;
 }
 
@@ -750,6 +748,21 @@ body {
 .play-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 243, 255, 0.4);
+}
+
+/* Unheard version — pulsing glow on the play button */
+@keyframes btn-new-pulse {
+    0%   { box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    50%  { box-shadow: 0 5px 20px rgba(0,243,255,0.6), 0 0 28px rgba(189,0,255,0.35); }
+    100% { box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+}
+
+.play-button.version-new {
+    animation: btn-new-pulse 2.2s ease-in-out infinite;
+}
+
+.play-button.version-new:hover {
+    animation: none;
 }
 
 /* ===== VERSION TABS ===== */

@@ -21,6 +21,8 @@ const basePath = isAdminMode ? '../' : '';
 
 // Songs the current listener has heard (any version). Persisted in localStorage.
 const heardSongs = new Set(JSON.parse(localStorage.getItem('sv_heard') || '[]'));
+// Individual versions the listener has heard or rated. Persisted in localStorage.
+const heardVersions = new Set(JSON.parse(localStorage.getItem('sv_heard_v') || '[]'));
 
 // Tracks selected version index per song card: { [songBaseId]: index }
 const selectedVersions = {};
@@ -157,7 +159,7 @@ audioPlayer.addEventListener('pause', () => {
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
-let currentSortMode = 'date'; // 'rating' or 'date'
+let currentSortMode = 'date'; // 'rating', 'date', or 'listens'
 
 function setSortMode(mode) {
 	currentSortMode = mode;
@@ -215,8 +217,17 @@ function sortSongCards() {
 			const statsA = songStats[idA] || { rating: 0 };
 			const statsB = songStats[idB] || { rating: 0 };
 			return statsB.rating - statsA.rating;
+		} else if (currentSortMode === 'listens') {
+			// Sort by listen count (highest first)
+			const statsA = songStats[idA] || { rating: 0, listens: 0 };
+			const statsB = songStats[idB] || { rating: 0, listens: 0 };
+			if (statsB.listens !== statsA.listens) {
+				return statsB.listens - statsA.listens;
+			}
+			// Secondary: rating
+			return statsB.rating - statsA.rating;
 		} else {
-			// Sort by rating (default)
+			// Sort by rating
 			const statsA = songStats[idA] || { rating: 0, listens: 0 };
 			const statsB = songStats[idB] || { rating: 0, listens: 0 };
 
@@ -416,7 +427,7 @@ function createSongCard(song) {
 					<span class="comment-number">0</span>
 				</span>
 			</div>
-			<button class="play-button version-play-btn" onclick="togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
+			<button class="play-button version-play-btn${!heardVersions.has(vid) && !isAdminMode ? ' version-new' : ''}" onclick="togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
 				▶ Play${hasVersions ? ' ' + v.label : ''}
 			</button>
 			<div class="detail-section" id="detail-section-${vid}">
@@ -736,10 +747,39 @@ function loadListenCount(songId) {
 			listenElement.textContent = `${count} listen${count === 1 ? '' : 's'}`;
 		}
 		// Track for sorting
-		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
-		songStats[songId].listens = count;
+		// Aggregate listens under the base song ID for sorting
+		const baseSong = songsData.find(s =>
+			s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
+		);
+		const statKey = baseSong ? baseSong.id : songId;
+		if (!songStats[statKey]) songStats[statKey] = { rating: 0, listens: 0 };
+		songStats[statKey].listens = (songStats[statKey].listens || 0) + count;
 		debouncedSortSongs();
 	});
+}
+
+// Mark a base song as heard and remove its NEW badge (called on full listen or on rating)
+function markSongHeard(baseId) {
+	if (isAdminMode || heardSongs.has(baseId)) return;
+	heardSongs.add(baseId);
+	localStorage.setItem('sv_heard', JSON.stringify([...heardSongs]));
+	const card = document.getElementById(`card-${baseId}`);
+	if (card) {
+		card.classList.remove('is-new');
+		const badge = card.querySelector('.new-badge');
+		if (badge) badge.remove();
+	}
+}
+
+// Mark a specific version as heard/rated and remove its button glow
+function markVersionHeard(vid, songBaseId, versionIndex) {
+	if (isAdminMode || heardVersions.has(vid)) return;
+	heardVersions.add(vid);
+	localStorage.setItem('sv_heard_v', JSON.stringify([...heardVersions]));
+	const btn = document.querySelector(
+		`button.play-button[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`
+	);
+	if (btn) btn.classList.remove('version-new');
 }
 
 function incrementListenCount(songId) {
@@ -749,19 +789,17 @@ function incrementListenCount(songId) {
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.transaction((currentCount) => (currentCount || 0) + 1);
 
-	// Mark base song as heard and strip the NEW badge/animation
+	// Resolve the base song and mark as heard
 	const baseSong = songsData.find(s =>
 		s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
 	);
-	if (baseSong && !heardSongs.has(baseSong.id)) {
-		heardSongs.add(baseSong.id);
-		localStorage.setItem('sv_heard', JSON.stringify([...heardSongs]));
-		const card = document.getElementById(`card-${baseSong.id}`);
-		if (card) {
-			card.classList.remove('is-new');
-			const badge = card.querySelector('.new-badge');
-			if (badge) badge.remove();
-		}
+	if (baseSong) {
+		markSongHeard(baseSong.id);
+		// Also mark the specific version as heard
+		const vi = baseSong.versions
+			? baseSong.versions.findIndex((_, i) => versionId(baseSong, i) === songId)
+			: 0;
+		markVersionHeard(songId, baseSong.id, vi >= 0 ? vi : 0);
 	}
 }
 
@@ -898,6 +936,12 @@ function updateStarsDisplay(songId, average) {
 	const starsContainer = document.getElementById(`rating-stars-${songId}`);
 	if (!starsContainer) return;
 
+	// Only fill stars with the community average after the user has rated this version.
+	// Until then the stars stay empty so the average doesn't influence their choice.
+	const summaryEl = document.getElementById(`summary-rating-${songId}`);
+	const userHasRated = summaryEl && !summaryEl.classList.contains('rating-hidden');
+	if (!userHasRated) return;
+
 	starsContainer.querySelectorAll('.star').forEach((star, index) => {
 		if (index < Math.round(average)) {
 			star.classList.add('filled');
@@ -911,6 +955,9 @@ function revealRating(songId) {
 	const ratingEl = document.getElementById(`summary-rating-${songId}`);
 	if (ratingEl) {
 		ratingEl.classList.remove('rating-hidden');
+		// Now that the user has rated, fill stars with the community average
+		const avgEl = document.getElementById(`avg-rating-${songId}`);
+		if (avgEl) updateStarsDisplay(songId, parseFloat(avgEl.textContent) || 0);
 	}
 }
 
@@ -997,6 +1044,17 @@ function rateSong(songId, rating) {
 			// Mark current song as rated
 			if (songId === currentSongId) {
 				currentSongRated = true;
+			}
+			// Rating counts as having heard the song — remove the NEW badge
+			const ratedBaseSong = songsData.find(s =>
+				s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
+			);
+			if (ratedBaseSong) {
+				markSongHeard(ratedBaseSong.id);
+				const rvi = ratedBaseSong.versions
+					? ratedBaseSong.versions.findIndex((_, i) => versionId(ratedBaseSong, i) === songId)
+					: 0;
+				markVersionHeard(songId, ratedBaseSong.id, rvi >= 0 ? rvi : 0);
 			}
 		})
 		.catch((error) => {
