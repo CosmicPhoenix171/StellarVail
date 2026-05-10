@@ -3,7 +3,6 @@ let currentSongId = null;
 let songsData = [];
 let shuffleMode = false;
 let activeCardElement = null;
-let activeCardPlaceholder = null;
 let listenCreditSongId = null;
 let listenCredited = false;
 let listenInvalidated = false; // True if user skipped forward
@@ -17,6 +16,7 @@ let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
 let pendingRating = null; // { songId, rating } stored when a guest tries to rate
 const isAdminMode = window.location.pathname.includes('/admin');
+const listenedEnough = new Set(); // version IDs where user has passed 75%
 const basePath = isAdminMode ? '../' : '';
 
 // Songs the current listener has heard (any version). Persisted in localStorage.
@@ -135,6 +135,7 @@ audioPlayer.addEventListener('timeupdate', () => {
 	if (audioPlayer.currentTime >= duration * 0.75 && listenCreditSongId === currentSongId) {
 		incrementListenCount(currentSongId);
 		listenCredited = true;
+		listenedEnough.add(currentSongId);
 	}
 });
 
@@ -147,13 +148,21 @@ audioPlayer.addEventListener('play', async () => {
 		console.warn('Audio analyser unavailable:', err);
 	}
 	// Update play button to show Pause
-	if (currentSongId) updatePlayButton(currentSongId, true);
+	if (currentSongId) {
+		const { song, vi } = resolveSongAndVersion(currentSongId) || {};
+		if (song) updatePlayButton(song.id, vi, true);
+	}
+	if (activeCardElement) activeCardElement.classList.remove('now-paused');
 });
 
 audioPlayer.addEventListener('pause', () => {
 	stopStarBoost();
 	// Update play button to show Resume
-	if (currentSongId) updatePlayButton(currentSongId, false);
+	if (currentSongId) {
+		const { song, vi } = resolveSongAndVersion(currentSongId) || {};
+		if (song) updatePlayButton(song.id, vi, false);
+	}
+	if (activeCardElement) activeCardElement.classList.add('now-paused');
 });
 
 audioPlayer.addEventListener('ended', stopStarBoost);
@@ -184,22 +193,13 @@ function sortSongCards() {
 	const cards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
 	
 	// Also need to consider the placeholder's position for sorting
-	const placeholder = songsContainer.querySelector('.placeholder-card');
-	
-	if (cards.length === 0 && !placeholder) return;
+	if (cards.length === 0) return;
 
-	// Build a combined list that includes the placeholder (representing the active song)
 	let sortableItems = [...cards];
-	
-	// If there's a placeholder (song is in Now Playing), include it in sorting
-	if (placeholder && activeCardElement) {
-		sortableItems.push(placeholder);
-	}
 
 	sortableItems.sort((a, b) => {
-		// Get the actual song ID (placeholder uses active card's ID)
-		const idA = a.classList.contains('placeholder-card') ? activeCardElement?.dataset.songId : a.dataset.songId;
-		const idB = b.classList.contains('placeholder-card') ? activeCardElement?.dataset.songId : b.dataset.songId;
+		const idA = a.dataset.songId;
+		const idB = b.dataset.songId;
 		
 		if (!idA || !idB) return 0;
 		
@@ -250,10 +250,7 @@ function sortSongCards() {
 // Mark top 12 highest-rated songs with a golden glow
 function markTop12RatedSongs() {
 	// Get cards from the songs container
-	const containerCards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
-	
-	// Also include the active card from Now Playing panel if it exists
-	const allCards = activeCardElement ? [...containerCards, activeCardElement] : containerCards;
+	const allCards = Array.from(songsContainer.querySelectorAll('.song-card'));
 	
 	// Sort by rating to find top 12 (regardless of current sort mode)
 	const sortedByRating = [...allCards].sort((a, b) => {
@@ -395,11 +392,12 @@ function createSongCard(song) {
 	const dateAdded = song.dateAdded ? formatDate(song.dateAdded) : '';
 	const dateHtml = dateAdded ? `<span class="date-added">${dateAdded}</span>` : '';
 
-	// Build version tabs HTML (only if more than one version)
+	// Build version tabs HTML — always shown; single-version songs get an "Original" tab
 	const hasVersions = song.versions && song.versions.length > 1;
-	const versionTabsHtml = hasVersions ? `
+	const tabVersions = song.versions || [{ filename: song.filename, label: 'Original' }];
+	const versionTabsHtml = `
 		<div class="version-tabs" id="version-tabs-${song.id}">
-			${song.versions.map((v, i) => {
+			${tabVersions.map((v, i) => {
 				const vid = versionId(song, i);
 				const isUnheard = !heardVersions.has(vid) && !isAdminMode;
 				return `
@@ -411,15 +409,15 @@ function createSongCard(song) {
 					${v.label}
 				</button>`;
 			}).join('')}
-		</div>` : '';
+		</div>`;
 
 	// Version panels — one per version, each with its own metrics/rating/comments
 	const versionPanelsHtml = (song.versions || [{ filename: song.filename, label: '' }]).map((v, i) => {
 		const vid = versionId(song, i);
 		return `
 		<div class="version-panel${i === 0 ? ' active' : ''}" id="version-panel-${song.id}-${i}">
-			<div class="summary-metrics">
-				${i === 0 ? dateHtml : ''}
+			<div class="card-meta-row">
+				${i === 0 ? (dateHtml || '') : ''}
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${vid}">
 					<span class="avg-rating" id="avg-rating-${vid}">0.0</span>
 					<span class="rating-count" id="rating-count-${vid}">(0 ratings)</span>
@@ -432,12 +430,15 @@ function createSongCard(song) {
 					<span class="comment-number">0</span>
 				</span>
 			</div>
-			<button class="play-button version-play-btn${!heardVersions.has(vid) && !isAdminMode ? ' version-new' : ''}" onclick="togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
-				▶ Play${hasVersions ? ' ' + v.label : ''}
-			</button>
+			<div class="play-button-wrap" onclick="togglePlaySong('${song.id}', ${i})">
+				<button class="play-button version-play-btn${!heardVersions.has(vid) && !isAdminMode ? ' version-new' : ''}" onclick="event.stopPropagation(); togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
+					▶ Play${hasVersions ? ' ' + v.label : ''}
+				</button>
+			</div>
 			<div class="detail-section" id="detail-section-${vid}">
 				${i === 0 ? detailHeaderHtml : ''}
 				${isAdminMode ? '' : `<div class="rating-section">
+					<h4 class="np-section-heading">⭐ Ratings</h4>
 					<div class="rating-stars" id="rating-stars-${vid}">
 						${[1, 2, 3, 4, 5].map((n) => '<span class="star" data-rating="' + n + '" onclick="rateSong(\'' + vid + '\', ' + n + ')">★</span>').join('')}
 					</div>
@@ -478,10 +479,8 @@ function createSongCard(song) {
 		? `<div class="new-badge">NEW</div>` : '';
 	card.innerHTML = `
 		${newBadgeHtml}
-		<div class="song-summary" onclick="loadSongToPlayer('${song.id}')">
-			<div class="summary-info">
-				<h3>${song.title}</h3>
-			</div>
+		<div class="card-title-row">
+			<h3 class="card-title">${song.title}</h3>
 		</div>
 		${versionTabsHtml}
 		${versionPanelsHtml}
@@ -505,14 +504,22 @@ function selectVersion(songBaseId, index) {
 		if (panel) panel.classList.toggle('active', i === index);
 	});
 
-	// If this song is currently playing, switch the audio to the selected version
-	if (currentSongId === songBaseId || currentSongId === versionId(song, index)) {
+	// If any version of this song is currently playing, switch audio to the selected version
+	const isPlayingThisSong = song.versions
+		? song.versions.some((_, i) => versionId(song, i) === currentSongId)
+		: currentSongId === song.id;
+	if (isPlayingThisSong) {
 		const filename = versionFilename(song, index);
 		const folder = song.folder || song.filename.replace(/\.wav$/i, '');
 		const wasPaused = audioPlayer.paused;
 		audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 		if (!wasPaused) audioPlayer.play().catch(() => {});
 		currentSongId = versionId(song, index);
+
+		// Move the playing icon to the newly-selected tab
+		document.querySelectorAll('.version-tab').forEach(t => t.classList.remove('tab-playing'));
+		const newPlayingTab = document.querySelector(`button.version-tab[data-song-id="${songBaseId}"][data-version-index="${index}"]`);
+		if (newPlayingTab) newPlayingTab.classList.add('tab-playing');
 	}
 }
 
@@ -559,9 +566,11 @@ function loadSongToPlayer(songBaseId, versionIndex) {
 
 	document.querySelectorAll('.play-button').forEach((btn) => {
 		btn.classList.remove('playing');
-		btn.textContent = btn.dataset.versionIndex !== undefined
-			? `▶ Play ${song.versions?.[btn.dataset.versionIndex]?.label || ''}`.trim()
-			: '▶ Play';
+		const bSong = songsData.find(s => s.id === btn.dataset.songId);
+		const bVi = parseInt(btn.dataset.versionIndex ?? 0);
+		const bLabel = bSong?.versions?.[bVi]?.label || '';
+		const hasVersions = bSong?.versions && bSong.versions.length > 1;
+		btn.textContent = `▶ Play${hasVersions && bLabel ? ' ' + bLabel : ''}`;
 	});
 
 	currentSongId = vid;
@@ -591,14 +600,8 @@ function updatePlayButton(songBaseId, versionIndex, isPlaying) {
 	const btn = document.querySelector(`button[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`)
 		|| document.querySelector(`button.play-button[data-song-id="${songBaseId}"]`);
 	if (!btn) return;
-	const song = songsData.find(s => s.id === songBaseId);
-	const label = song?.versions?.[versionIndex]?.label || '';
 	btn.classList.add('playing');
-	if (isPlaying) {
-		btn.textContent = `⏸ Pause${label ? ' ' + label : ''}`;
-	} else {
-		btn.textContent = `▶ Resume${label ? ' ' + label : ''}`;
-	}
+	// Text stays as-is — the NOW PLAYING / NOW PAUSED overlay handles state display
 }
 
 function playSong(songBaseId, versionIndex) {
@@ -630,55 +633,37 @@ function playSong(songBaseId, versionIndex) {
 		const bSong = songsData.find(s => s.id === btn.dataset.songId);
 		const bVi = parseInt(btn.dataset.versionIndex ?? 0);
 		const bLabel = bSong?.versions?.[bVi]?.label || '';
-		btn.textContent = `▶ Play${bLabel ? ' ' + bLabel : ''}`;
+		const hasVersions = bSong?.versions && bSong.versions.length > 1;
+		btn.textContent = `▶ Play${hasVersions && bLabel ? ' ' + bLabel : ''}`;
 	});
+
+	// Mark the playing version tab as active
+	document.querySelectorAll('.version-tab').forEach(t => t.classList.remove('tab-playing'));
+	const playingTab = document.querySelector(`button.version-tab[data-song-id="${songBaseId}"][data-version-index="${vi}"]`);
+	if (playingTab) playingTab.classList.add('tab-playing');
 
 	updatePlayButton(songBaseId, vi, true);
 	currentSongId = vid;
 }
 
 function updateNowPlayingCard(song) {
-	const card = document.getElementById('now-playing-card');
-	if (!card) return;
-
 	moveCardToPlayer(song.id);
 }
 
 function moveCardToPlayer(songId) {
-	const nowPlayingContainer = document.getElementById('now-playing-card');
-	if (!nowPlayingContainer) return;
-
-	// If the requested song is already in the player, nothing to do
-	if (activeCardElement && activeCardElement.dataset.songId === songId) {
-		return;
-	}
-
-	// Restore previously active card back to the list
-	if (activeCardElement && activeCardPlaceholder) {
+	// Deactivate previously playing card
+	if (activeCardElement) {
+		if (activeCardElement.dataset.songId === songId) return;
 		activeCardElement.classList.remove('in-now-playing');
-		activeCardPlaceholder.replaceWith(activeCardElement);
 		activeCardElement = null;
-		activeCardPlaceholder = null;
 	}
 
 	const card = document.getElementById(`card-${songId}`);
-	if (!card) {
-		nowPlayingContainer.innerHTML = '<p class="no-song-playing">Select a song to play</p>';
-		return;
-	}
-
-	const placeholder = document.createElement('div');
-	placeholder.className = 'song-card placeholder-card';
-	placeholder.innerHTML = '<p class="placeholder-text">Playing in the Now Playing panel</p>';
-
-	card.parentNode.replaceChild(placeholder, card);
+	if (!card) return;
 
 	card.classList.add('in-now-playing');
-	nowPlayingContainer.innerHTML = '';
-	nowPlayingContainer.appendChild(card);
-
 	activeCardElement = card;
-	activeCardPlaceholder = placeholder;
+	card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function playNextSong() {
@@ -689,14 +674,8 @@ function playNextSong() {
 		return;
 	}
 
-	// Get sorted order from DOM - use base song IDs (placeholders represent active card)
 	const allCards = Array.from(songsContainer.querySelectorAll('.song-card'));
-	const sortedBaseIds = allCards.map(card => {
-		if (card.classList.contains('placeholder-card') && activeCardElement) {
-			return activeCardElement.dataset.songId;
-		}
-		return card.dataset.songId;
-	});
+	const sortedBaseIds = allCards.map(card => card.dataset.songId);
 
 	// currentSongId might be a versionId — find the base song
 	const currentBaseSong = songsData.find(s =>
@@ -732,12 +711,13 @@ function toggleShuffle() {
 	if (!shuffleBtn) return;
 
 	if (shuffleMode) {
-		shuffleBtn.textContent = '🔀 Shuffle: ON';
+		shuffleBtn.title = 'Shuffle: ON';
 		shuffleBtn.classList.add('active');
 	} else {
-		shuffleBtn.textContent = '🔀 Shuffle: OFF';
+		shuffleBtn.title = 'Shuffle: OFF';
 		shuffleBtn.classList.remove('active');
 	}
+	updateQueue();
 }
 
 // ===== LISTEN COUNT =====
@@ -1046,6 +1026,12 @@ function rateSong(songId, rating) {
 	if (isGuest() && !isAdminMode) {
 		pendingRating = { songId, rating };
 		showLoginPopup(true); // true = triggered by rating
+		return;
+	}
+
+	// Block rating if the user hasn't listened to at least 75% of this version
+	if (!listenedEnough.has(songId) && !isAdminMode) {
+		showNotListenedPopup();
 		return;
 	}
 
@@ -1465,6 +1451,17 @@ function updateUserDisplay() {
 			}
 		}
 	}
+}
+
+function showNotListenedPopup() {
+	const popup = document.getElementById('not-listened-popup');
+	if (!popup) return;
+	popup.style.display = 'flex';
+	// Auto-dismiss after 3 seconds
+	clearTimeout(showNotListenedPopup._timer);
+	showNotListenedPopup._timer = setTimeout(() => {
+		popup.style.display = 'none';
+	}, 3000);
 }
 
 function showLoginPopup(fromRating) {

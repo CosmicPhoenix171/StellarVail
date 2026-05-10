@@ -28,13 +28,16 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    min-height: 100vh;
     background: transparent;
     position: relative;
     color: var(--text-main);
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .aurora-sky {
@@ -276,12 +279,11 @@ body {
 
 .app-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    grid-template-rows: minmax(0, 1fr) 110px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: 24px;
     padding: 24px;
-    min-height: 100vh;
-    height: auto;
+    height: 100vh;
 }
 
 .content-column {
@@ -289,6 +291,7 @@ body {
     flex-direction: column;
     gap: 24px;
     overflow: hidden;
+    min-height: 0;
 }
 
 .main-content {
@@ -471,12 +474,15 @@ body {
 .songs-grid {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 8px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     grid-auto-rows: min-content;
     align-content: start;
+    align-items: start;
     gap: 20px;
+    min-height: 0;
 }
 
 .songs-grid::-webkit-scrollbar { width: 6px; }
@@ -547,11 +553,65 @@ body {
     -webkit-backdrop-filter: blur(24px);
 }
 .song-card.in-now-playing {
-    border-color: var(--accent-2);
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-    background: linear-gradient(145deg, rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.45));
+    border-color: var(--accent);
+    box-shadow:
+        0 0 0 2px var(--accent),
+        0 0 30px rgba(0, 243, 255, 0.45),
+        0 0 60px rgba(0, 243, 255, 0.2),
+        0 8px 32px rgba(0, 0, 0, 0.6);
+    background: linear-gradient(145deg, rgba(0, 243, 255, 0.12), rgba(189, 0, 255, 0.1), rgba(0, 0, 0, 0.45));
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
+    position: relative;
+    animation: nowPlayingPulse 2.4s ease-in-out infinite;
+}
+
+/* Remove the floating badge above the card */
+.song-card.in-now-playing::after {
+    content: none;
+}
+
+/* NOW PLAYING overlay on the play button wrap */
+.play-button-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.song-card.in-now-playing .version-panel.active .play-button-wrap::after {
+    content: '▶ NOW PLAYING';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, rgba(0,243,255,0.85), rgba(189,0,255,0.85));
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    border-radius: 999px;
+    pointer-events: none;
+    cursor: pointer;
+    animation: nowPlayingPulse 2.4s ease-in-out infinite;
+}
+
+.song-card.in-now-playing .version-panel.active .play-button-wrap {
+    cursor: pointer;
+}
+
+.song-card.in-now-playing.now-paused .version-panel.active .play-button-wrap::after {
+    content: '⏸ NOW PAUSED';
+    background: linear-gradient(90deg, rgba(220,50,50,0.85), rgba(160,0,80,0.85));
+    animation: none;
+}
+
+.song-card.in-now-playing .version-panel.active .play-button {
+    opacity: 0;
+}
+
+@keyframes nowPlayingPulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 30px rgba(0, 243, 255, 0.45), 0 0 60px rgba(0, 243, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.6); }
+    50%       { box-shadow: 0 0 0 2px var(--accent), 0 0 45px rgba(0, 243, 255, 0.65), 0 0 90px rgba(0, 243, 255, 0.3), 0 8px 32px rgba(0, 0, 0, 0.6); }
 }
 
 /* Top 12 highest rated songs - Golden glow */
@@ -596,11 +656,12 @@ body {
 
 /* Playing song that is also top-rated */
 .song-card.top-rated.in-now-playing {
-    border-color: rgba(255, 215, 0, 0.8);
-    box-shadow: 
-        0 0 20px rgba(255, 0, 255, 0.3),
-        0 0 30px rgba(255, 215, 0, 0.4);
-    background: linear-gradient(145deg, rgba(255, 215, 0, 0.1), rgba(255, 0, 255, 0.15), rgba(0, 0, 0, 0.45));
+    border-color: var(--accent);
+    box-shadow:
+        0 0 0 2px var(--accent),
+        0 0 30px rgba(0, 243, 255, 0.4),
+        0 0 40px rgba(255, 215, 0, 0.3);
+    background: linear-gradient(145deg, rgba(0, 243, 255, 0.1), rgba(255, 215, 0, 0.08), rgba(0, 0, 0, 0.45));
 }
 
 @keyframes goldenPulse {
@@ -614,6 +675,45 @@ body {
 
 .song-summary {
     display: block;
+}
+
+/* ===== CONSISTENT CARD LAYOUT ===== */
+.card-title-row {
+    padding: 4px 0 8px;
+    border-radius: 8px;
+}
+
+.card-title {
+    font-size: 1.15em;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Meta row: date • rating • listens • comment icon — all on one line */
+.card-meta-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.55);
+    min-height: 24px;
+}
+
+/* Dot separator between items */
+.card-meta-row > *:not(:first-child)::before {
+    content: '·';
+    margin-right: 8px;
+    opacity: 0.4;
+}
+
+/* Don't put a dot before the comment icon (it has its own margin) */
+.card-meta-row > .comment-count::before {
+    content: '';
+    margin: 0;
 }
 
 .summary-info {
@@ -635,8 +735,8 @@ body {
 }
 
 .date-added {
-    font-size: 0.75em;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.45);
     letter-spacing: 0.3px;
     white-space: nowrap;
 }
@@ -662,20 +762,20 @@ body {
 }
 
 .avg-rating {
-    font-size: 1.1em;
-    font-weight: 600;
+    font-size: 0.95em;
+    font-weight: 700;
     color: var(--accent);
     text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
 }
 
 .rating-count {
-    font-size: 0.75em;
+    font-size: 0.85em;
     color: var(--text-muted);
     white-space: nowrap;
 }
 
 .listen-count {
-    font-size: 0.8em;
+    font-size: 0.85em;
     color: var(--accent-2);
     white-space: nowrap;
 }
@@ -687,7 +787,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: transform 0.2s ease;
-    margin-left: 4px;
+    margin-left: 2px;
 }
 
 .comment-count:hover {
@@ -722,9 +822,10 @@ body {
 .song-card .artist { color: var(--text-muted); font-size: 0.95em; }
 .song-card .description { font-size: 0.9em; color: rgba(255,255,255,0.7); line-height: 1.4; }
 
-.song-card.in-now-playing .song-summary {
+.song-card.in-now-playing .card-title-row {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 16px;
+    margin-bottom: 4px;
 }
 
 .detail-header {
@@ -802,7 +903,7 @@ body {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: 2px;
+    margin: 2px 0 0;
 }
 
 .version-tab {
@@ -831,20 +932,79 @@ body {
     box-shadow: 0 0 8px rgba(0, 243, 255, 0.2);
 }
 
+/* Version tab for the currently playing version */
+.version-tab.tab-playing {
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.35), rgba(189, 0, 255, 0.3));
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5), 0 0 20px rgba(0, 243, 255, 0.2);
+    font-weight: 800;
+    position: relative;
+}
+
+.version-tab.tab-playing::before {
+    content: '▶ ';
+    font-size: 0.85em;
+    color: var(--accent);
+    text-shadow: 0 0 6px rgba(0, 243, 255, 0.8);
+    margin-right: 4px;
+}
+
+/* Single-tab (Original label) — not interactive */
+.version-tabs:only-child .version-tab:only-child,
+.version-tabs .version-tab:only-child {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
 /* ===== VERSION PANELS ===== */
 .version-panel {
     display: none;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .version-panel.active {
     display: flex;
 }
 
+/* Control buttons in the top bar (Surprise Me, Shuffle, Hide UI) */
+.control-btns {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.control-btns button {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    border-radius: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 1.05em;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+.control-btns button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent);
+}
+
+.control-btns button.active {
+    border-color: var(--accent);
+    background: rgba(0, 243, 255, 0.12);
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.25);
+}
+
+/* ===== NOW-PLAYING PANEL styles (panel removed, keeping in-now-playing card style) ===== */
+
 /* detail-section is shown only when card is in Now Playing */
 .version-panel .detail-section {
-    display: none;
+    display: flex;
     margin-top: 12px;
     padding-top: 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -852,6 +1012,7 @@ body {
     gap: 16px;
 }
 
+/* kept for compatibility */
 .song-card.in-now-playing .version-panel.active .detail-section {
     display: flex;
 }
@@ -1224,47 +1385,54 @@ body {
 .edit-feedback-btn:hover { border-color: var(--accent); }
 
 .now-playing-panel {
-    background: rgba(15, 5, 25, 0.6);
-    border-radius: 26px;
-    border: var(--glass-border);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: visible;
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(10px);
+    display: none;
 }
 
 .now-playing-card {
-    flex: 1;
-    overflow: visible;
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 20px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.2);
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    display: none;
 }
 
 .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.panel-title {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 6px;
 }
 
 .panel-controls button {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-main);
-    border-radius: 12px;
-    padding: 8px 14px;
+    border-radius: 10px;
+    padding: 6px 9px;
     cursor: pointer;
+    font-size: 1em;
+    line-height: 1;
     transition: all 0.2s;
 }
 
 .panel-controls button:hover {
     background: rgba(255, 255, 255, 0.15);
     border-color: var(--accent);
+}
+
+.panel-controls button.active {
+    border-color: var(--accent);
+    background: rgba(0, 243, 255, 0.12);
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.25);
 }
 
 .player-bar {
@@ -1277,8 +1445,7 @@ body {
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px);
-    position: sticky;
-    bottom: 12px;
+    align-self: end;
     z-index: 20;
 }
 
@@ -1295,11 +1462,11 @@ body {
 @media (max-width: 1200px) {
     .app-shell {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto 110px;
+        grid-template-rows: auto auto;
         height: auto;
     }
 
-    body { overflow: auto; }
+    html, body { height: auto; overflow: auto; }
 
     .now-playing-panel {
         grid-column: 1 / -1;
@@ -1590,4 +1757,42 @@ body.low-perf-mode .song-card:hover {
 
 .logout-btn:hover {
     background: rgba(255, 100, 100, 0.4);
+}
+
+/* ===== NOT-LISTENED POPUP ===== */
+.not-listened-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+    cursor: pointer;
+}
+
+.not-listened-modal {
+    background: linear-gradient(135deg, rgba(30, 15, 50, 0.97), rgba(10, 5, 20, 0.97));
+    border: 1px solid rgba(255, 160, 0, 0.4);
+    border-radius: 20px;
+    padding: 36px 48px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(255, 160, 0, 0.15);
+    animation: popIn 0.25s ease;
+    max-width: 360px;
+}
+
+.not-listened-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 14px;
+}
+
+.not-listened-modal p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
 }

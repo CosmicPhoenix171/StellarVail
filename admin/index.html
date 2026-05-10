@@ -25,7 +25,11 @@
                         <button id="sort-rating-btn" class="sort-btn" onclick="setSortMode('rating')">⭐ Rating</button>
                         <button id="sort-date-btn" class="sort-btn active" onclick="setSortMode('date')">📅 Newest</button>
                         <button id="sort-listens-btn" class="sort-btn" onclick="setSortMode('listens')">🎧 Most Listened</button>
-                        <button class="sort-btn purge-btn" onclick="purgeAllGuestRatings()" title="Remove all guest ratings from the database">🗑️ Purge Guest Ratings</button>
+                    </div>
+                    <div class="control-btns">
+                        <button id="random-btn" onclick="playRandomSong()" title="Surprise Me">🎲</button>
+                        <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle: OFF">🔀</button>
+                        <button id="hide-ui-btn" onclick="toggleHideUI()" title="Hide UI">👁️</button>
                     </div>
                     <div class="user-pill" onclick="showLoginPopup()" title="Click to sign in">
                         <span class="status-dot" style="background: #ff00ff; box-shadow: 0 0 8px #ff00ff;"></span>
@@ -38,20 +42,6 @@
                 <!-- Songs will be dynamically loaded here -->
             </section>
         </div>
-
-        <aside class="now-playing-panel">
-            <div class="panel-header">
-                <h3>Now Playing</h3>
-                <div class="panel-controls">
-                    <button id="random-btn" onclick="playRandomSong()" title="Surprise me">🎲 Surprise Me</button>
-                    <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">🔀 Shuffle: OFF</button>
-                    <button id="hide-ui-btn" onclick="toggleHideUI()" title="Hide UI to watch stars">👁️ Hide UI</button>
-                </div>
-            </div>
-            <div id="now-playing-card" class="now-playing-card">
-                <p class="no-song-playing">Select a song to play</p>
-            </div>
-        </aside>
 
         <footer class="player-bar">
             <audio id="audio-player" controls controlsList="nodownload" oncontextmenu="return false;"></audio>
@@ -87,6 +77,14 @@
             </div>
             <div id="login-status" class="login-status"></div>
             <button id="logout-btn" class="logout-btn" style="display: none;">Sign Out</button>
+        </div>
+    </div>
+
+    <!-- Not-listened-enough popup -->
+    <div id="not-listened-popup" class="not-listened-overlay" style="display: none;" onclick="this.style.display='none'">
+        <div class="not-listened-modal">
+            <span class="not-listened-icon">🎵</span>
+            <p>You haven't finished the song yet!</p>
         </div>
     </div>
 
