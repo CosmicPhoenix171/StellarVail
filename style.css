@@ -765,6 +765,38 @@ body {
     animation: none;
 }
 
+/* Unheard version tab — pulsing accent outline */
+@keyframes tab-new-pulse {
+    0%   { border-color: rgba(0,243,255,0.4); box-shadow: none; }
+    50%  { border-color: rgba(0,243,255,0.9); box-shadow: 0 0 10px rgba(0,243,255,0.4), 0 0 20px rgba(189,0,255,0.2); }
+    100% { border-color: rgba(0,243,255,0.4); box-shadow: none; }
+}
+
+.version-tab.version-new {
+    border-color: rgba(0, 243, 255, 0.5);
+    color: var(--text-main);
+    animation: tab-new-pulse 2.2s ease-in-out infinite;
+    position: relative;
+}
+
+/* Small dot in the top-right corner of the tab */
+.version-tab.version-new::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: 5px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(0, 243, 255, 0.8);
+}
+
+.version-tab.version-new:hover,
+.version-tab.version-new.active {
+    animation: none;
+}
+
 /* ===== VERSION TABS ===== */
 .version-tabs {
     display: flex;

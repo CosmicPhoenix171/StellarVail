@@ -399,13 +399,18 @@ function createSongCard(song) {
 	const hasVersions = song.versions && song.versions.length > 1;
 	const versionTabsHtml = hasVersions ? `
 		<div class="version-tabs" id="version-tabs-${song.id}">
-			${song.versions.map((v, i) => `
-				<button class="version-tab${i === 0 ? ' active' : ''}"
+			${song.versions.map((v, i) => {
+				const vid = versionId(song, i);
+				const isUnheard = !heardVersions.has(vid) && !isAdminMode;
+				return `
+				<button class="version-tab${i === 0 ? ' active' : ''}${isUnheard ? ' version-new' : ''}"
+					data-song-id="${song.id}"
 					data-version-index="${i}"
+					data-tab="true"
 					onclick="selectVersion('${song.id}', ${i})">
 					${v.label}
-				</button>
-			`).join('')}
+				</button>`;
+			}).join('')}
 		</div>` : '';
 
 	// Version panels — one per version, each with its own metrics/rating/comments
@@ -771,16 +776,22 @@ function markSongHeard(baseId) {
 	}
 }
 
-// Mark a specific version as heard/rated and remove its button glow.
+// Mark a specific version as heard/rated: remove button glow + tab highlight.
 // Only removes the card NEW badge once every version has been heard/rated.
 function markVersionHeard(vid, songBaseId, versionIndex) {
 	if (isAdminMode || heardVersions.has(vid)) return;
 	heardVersions.add(vid);
 	localStorage.setItem('sv_heard_v', JSON.stringify([...heardVersions]));
+	// Remove glow from play button
 	const btn = document.querySelector(
 		`button.play-button[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`
 	);
 	if (btn) btn.classList.remove('version-new');
+	// Remove highlight from version tab
+	const tab = document.querySelector(
+		`button.version-tab[data-song-id="${songBaseId}"][data-version-index="${versionIndex}"]`
+	);
+	if (tab) tab.classList.remove('version-new');
 
 	// Remove the card-level NEW badge only when every version is now heard/rated
 	const song = songsData.find(s => s.id === songBaseId);
