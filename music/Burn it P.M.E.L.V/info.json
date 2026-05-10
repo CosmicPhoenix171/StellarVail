@@ -4,7 +4,6 @@
     "dateAdded": "January 1, 2026",
     "versions": [
         { "filename": "Burn it P.M.E.L.V.wav", "label": "P.M.E.L.V" },
-        { "filename": "burn-it V2.wav",         "label": "V2" },
         { "filename": "Burn it v3.mp3",         "label": "V3" }
     ]
 }
