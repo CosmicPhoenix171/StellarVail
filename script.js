@@ -172,15 +172,35 @@ audioPlayer.addEventListener('pause', () => {
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
-let currentSortMode = 'date'; // 'rating', 'date', or 'listens'
+let currentSortMode = 'date'; // 'rating', 'date', 'listens', 'comments', 'title'
+let currentSortDir = 'desc'; // 'asc' or 'desc'
 
 function setSortMode(mode) {
-	currentSortMode = mode;
+	if (mode === currentSortMode) {
+		currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
+	} else {
+		currentSortMode = mode;
+		currentSortDir = 'desc';
+	}
 	
-	// Update button states
+	// Update old button states (hidden bar kept for compatibility)
 	document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
 	const activeBtn = document.getElementById(`sort-${mode}-btn`);
 	if (activeBtn) activeBtn.classList.add('active');
+
+	// Update column header highlight + arrow
+	const colMap = { title: 'sch-title', date: 'sch-date', rating: 'sch-rating', listens: 'sch-listens', comments: 'sch-comments' };
+	document.querySelectorAll('.sch-sortable').forEach(el => {
+		el.classList.remove('sch-active');
+		const arrow = el.querySelector('.sort-arrow');
+		if (arrow) arrow.textContent = '';
+	});
+	const activeCol = document.getElementById(colMap[mode]);
+	if (activeCol) {
+		activeCol.classList.add('sch-active');
+		const arrow = activeCol.querySelector('.sort-arrow');
+		if (arrow) arrow.textContent = currentSortDir === 'desc' ? ' ▼' : ' ▲';
+	}
 	
 	// Re-sort immediately
 	sortSongCards();
@@ -207,7 +227,11 @@ function sortSongCards() {
 		
 		if (!idA || !idB) return 0;
 		
-		if (currentSortMode === 'date') {
+		if (currentSortMode === 'title') {
+			const songA = songsData.find(s => s.id === idA);
+			const songB = songsData.find(s => s.id === idB);
+			return (songA?.title || '').localeCompare(songB?.title || '');
+		} else if (currentSortMode === 'date') {
 			// Sort by date (newest first)
 			const songA = songsData.find(s => s.id === idA);
 			const songB = songsData.find(s => s.id === idB);
@@ -230,6 +254,10 @@ function sortSongCards() {
 			}
 			// Secondary: rating
 			return statsB.rating - statsA.rating;
+		} else if (currentSortMode === 'comments') {
+			const statsA = songStats[idA] || { comments: 0 };
+			const statsB = songStats[idB] || { comments: 0 };
+			return (statsB.comments || 0) - (statsA.comments || 0);
 		} else {
 			// Sort by rating
 			const statsA = songStats[idA] || { rating: 0, listens: 0 };
@@ -243,6 +271,9 @@ function sortSongCards() {
 			return statsB.listens - statsA.listens;
 		}
 	});
+
+	// Apply sort direction
+	if (currentSortDir === 'asc') sortableItems.reverse();
 
 	// Re-append in sorted order (moves existing DOM nodes)
 	sortableItems.forEach(item => songsContainer.appendChild(item));
@@ -1271,6 +1302,10 @@ function loadFeedback(songId) {
 		
 		const feedbacks = snapshot.val();
 		const commentCount = feedbacks ? Object.keys(feedbacks).length : 0;
+
+		// Track in songStats for sorting
+		if (!songStats[songId]) songStats[songId] = { rating: 0, listens: 0 };
+		songStats[songId].comments = commentCount;
 		
 		// Update comment count in card header
 		if (commentCountEl) {
@@ -1844,7 +1879,10 @@ function handleLogout() {
 }
 
 // Initialize user display on load
-document.addEventListener('DOMContentLoaded', updateUserDisplay);
+document.addEventListener('DOMContentLoaded', () => {
+	updateUserDisplay();
+	setSortMode('date'); // highlight default column header
+});
 
 // ===== PERFORMANCE MODE (always on) =====
 function initPerfMode() {

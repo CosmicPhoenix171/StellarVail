@@ -20,7 +20,7 @@
                         <h1>Stellar Vail</h1>
                         <p>Journey Through Sound</p>
                     </div>
-                    <div class="sort-controls">
+                    <div class="sort-controls" style="display:none">
                         <span class="sort-label">Sort by:</span>
                         <button id="sort-rating-btn" class="sort-btn" onclick="setSortMode('rating')">⭐ Rating</button>
                         <button id="sort-date-btn" class="sort-btn active" onclick="setSortMode('date')">📅 Newest</button>
@@ -43,11 +43,11 @@
             <div class="list-and-panel">
                 <div class="songs-list-column">
                     <div class="song-col-header">
-                        <div class="sch-col">Title</div>
-                        <div class="sch-col">Date</div>
-                        <div class="sch-col">Rating</div>
-                        <div class="sch-col">Listens</div>
-                        <div class="sch-col">Comments</div>
+                        <div class="sch-col sch-sortable" id="sch-title" onclick="setSortMode('title')">Title <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-date" onclick="setSortMode('date')">Date <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-rating" onclick="setSortMode('rating')">Rating <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-listens" onclick="setSortMode('listens')">Listens <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-comments" onclick="setSortMode('comments')">Comments <span class="sort-arrow"></span></div>
                         <div class="sch-col">Play</div>
                     </div>
                     <section class="songs-grid" id="songs-container">

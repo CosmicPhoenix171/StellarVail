@@ -551,6 +551,26 @@ body {
     padding-left: 10px;
 }
 
+.sch-sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.sch-sortable:hover {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.sch-sortable.sch-active {
+    color: var(--accent);
+    text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+}
+
+.sort-arrow {
+    font-style: normal;
+    font-size: 0.85em;
+}
+
 .now-playing-side-panel {
     display: none;
     flex-direction: column;
