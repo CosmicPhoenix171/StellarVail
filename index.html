@@ -24,28 +24,47 @@
                         <span class="sort-label">Sort by:</span>
                         <button id="sort-rating-btn" class="sort-btn" onclick="setSortMode('rating')">⭐ Rating</button>
                         <button id="sort-date-btn" class="sort-btn active" onclick="setSortMode('date')">📅 Newest</button>
-                        <button id="sort-listens-btn" class="sort-btn" onclick="setSortMode('listens')">🎧 Most Listened</button>
+                        <button id="sort-listens-btn" class="sort-btn" onclick="setSortMode('listens')">🎧 Most Played</button>
                     </div>
-                    <div class="control-btns">
-                        <button id="random-btn" onclick="playRandomSong()" title="Surprise Me">🎲</button>
-                        <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle: OFF">🔀</button>
-                        <button id="hide-ui-btn" onclick="toggleHideUI()" title="Hide UI">👁️</button>
-                    </div>
-                    <div class="user-pill" onclick="showLoginPopup()" title="Click to sign in">
-                        <span class="status-dot"></span>
-                        <span id="user-name-display">Guest</span>
+                    <div class="top-bar-right">
+                        <div class="control-btns">
+                            <button id="random-btn" onclick="playRandomSong()" title="Surprise Me">🎲</button>
+                            <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle: OFF">🔀</button>
+                            <button id="hide-ui-btn" onclick="toggleHideUI()" title="Hide UI">👁️</button>
+                        </div>
+                        <div class="user-pill" onclick="showLoginPopup()" title="Click to sign in">
+                            <span class="status-dot"></span>
+                            <span id="user-name-display">Guest</span>
+                        </div>
                     </div>
                 </header>
             </main>
 
-            <section class="songs-grid" id="songs-container">
-                <!-- Songs will be dynamically loaded here -->
-            </section>
+            <div class="list-and-panel">
+                <div class="songs-list-column">
+                    <div class="song-col-header">
+                        <div class="sch-col">Title</div>
+                        <div class="sch-col">Date</div>
+                        <div class="sch-col">Rating</div>
+                        <div class="sch-col">Listens</div>
+                        <div class="sch-col">Comments</div>
+                        <div class="sch-col">Play</div>
+                    </div>
+                    <section class="songs-grid" id="songs-container">
+                        <!-- Songs will be dynamically loaded here -->
+                    </section>
+                </div>
+
+            </div>
         </div>
 
         <footer class="player-bar">
             <audio id="audio-player" controls controlsList="nodownload" oncontextmenu="return false;"></audio>
         </footer>
+
+        <div class="now-playing-side-panel" id="now-playing-side-panel">
+            <!-- Populated by JS when a song plays -->
+        </div>
     </div>
 
     <!-- Rating Popup Modal -->

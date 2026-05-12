@@ -3,6 +3,8 @@ let currentSongId = null;
 let songsData = [];
 let shuffleMode = false;
 let activeCardElement = null;
+let selectedCardElement = null;
+let selectedSongId = null;
 let listenCreditSongId = null;
 let listenCredited = false;
 let listenInvalidated = false; // True if user skipped forward
@@ -153,6 +155,7 @@ audioPlayer.addEventListener('play', async () => {
 		if (song) updatePlayButton(song.id, vi, true);
 	}
 	if (activeCardElement) activeCardElement.classList.remove('now-paused');
+	syncSidePanelPlaybackState();
 });
 
 audioPlayer.addEventListener('pause', () => {
@@ -163,6 +166,7 @@ audioPlayer.addEventListener('pause', () => {
 		if (song) updatePlayButton(song.id, vi, false);
 	}
 	if (activeCardElement) activeCardElement.classList.add('now-paused');
+	syncSidePanelPlaybackState();
 });
 
 audioPlayer.addEventListener('ended', stopStarBoost);
@@ -332,7 +336,8 @@ async function loadSongs() {
 						dateAdded: info.dateAdded || today,
 						artist: info.artist || '',
 						description: info.description || '',
-						versions: info.versions || null
+						versions: info.versions || null,
+						art: info.art ? `${basePath}music/${folder}/${info.art}` : null
 					};
 				} catch (err) {
 					console.warn(`Could not load info.json for folder "${folder}":`, err);
@@ -370,6 +375,15 @@ function renderSongs() {
 	
 	// Sort immediately after render (especially for date sorting)
 	sortSongCards();
+
+	const playingBaseSongId = resolveSongAndVersion(currentSongId)?.song?.id;
+	const defaultSongId = playingBaseSongId || selectedSongId || songsContainer.querySelector('.song-card')?.dataset.songId;
+	if (defaultSongId) {
+		selectSong(defaultSongId, { scroll: false });
+	}
+	if (playingBaseSongId) {
+		moveCardToPlayer(playingBaseSongId);
+	}
 }
 
 function createSongCard(song) {
@@ -378,6 +392,7 @@ function createSongCard(song) {
 	card.className = `song-card${isNew ? ' is-new' : ''}`;
 	card.id = `card-${song.id}`;
 	card.dataset.songId = song.id;
+	card.addEventListener('click', () => selectSong(song.id));
 
 	const artistValue = (song.artist || '').trim();
 	const descriptionValue = (song.description || '').trim();
@@ -419,7 +434,11 @@ function createSongCard(song) {
 			<div class="card-meta-row">
 				${i === 0 ? (dateHtml || '') : ''}
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${vid}">
-					<span class="avg-rating" id="avg-rating-${vid}">0.0</span>
+					<div class="summary-stars" id="summary-stars-${vid}" aria-hidden="true">
+						${Array.from({ length: 5 }, () => '<span class="summary-star">★</span>').join('')}
+					</div>
+					<span class="summary-user-rating" id="summary-user-rating-${vid}"></span>
+					<span class="avg-rating" id="avg-rating-${vid}">Avg 0.0★</span>
 					<span class="rating-count" id="rating-count-${vid}">(0 ratings)</span>
 				</div>
 				<span class="listen-count" id="listen-count-${vid}">0 listens</span>
@@ -451,12 +470,15 @@ function createSongCard(song) {
 					</div>
 					<div class="ratings-breakdown-list" id="ratings-list-${vid}"></div>
 				</div>` : ''}
-				<div class="feedback-section ${isAdminMode ? '' : 'collapsed'}" id="feedback-section-${vid}">
+				<div class="feedback-section" id="feedback-section-${vid}">
 					<div class="feedback-header-row">
-						<h4>Comments</h4>
-						<button type="button" class="feedback-toggle" onclick="toggleFeedback('${vid}')">${isAdminMode ? '▲' : '▼'}</button>
+						<div class="feedback-header-left">
+							<h4>Comments</h4>
+							<p class="feedback-hint" id="feedback-hint-${vid}">No comments yet. Be the first to leave feedback.</p>
+						</div>
+						<button type="button" class="feedback-toggle" onclick="toggleFeedback('${vid}')">▲</button>
 					</div>
-					<div class="feedback-body" id="feedback-body-${vid}" ${isAdminMode ? '' : 'style="display:none"'}>
+					<div class="feedback-body" id="feedback-body-${vid}">
 						<div class="feedback-form">
 							<input type="text" id="feedback-name-${vid}" placeholder="Name (optional)" maxlength="50">
 							<textarea id="feedback-text-${vid}" placeholder="Write a comment..." maxlength="500"></textarea>
@@ -477,12 +499,31 @@ function createSongCard(song) {
 
 	const newBadgeHtml = (!heardSongs.has(song.id) && !isAdminMode)
 		? `<div class="new-badge">NEW</div>` : '';
+	const albumArtHtml = `
+		<div class="album-art-wrap">
+			${song.art
+				? `<img class="album-art" src="${song.art}" alt="${song.title} cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+				   <div class="album-art-placeholder" style="display:none"></div>`
+				: `<div class="album-art-placeholder"></div>`
+			}
+			<div class="art-text-overlay">
+				<h3 class="art-title">${song.title}</h3>
+				<div class="art-overlay-bottom">
+					${versionTabsHtml}
+					<div class="art-meta-chips">
+						${dateAdded ? `<span class="art-chip art-chip-date">${dateAdded}</span>` : ''}
+						<span class="art-chip art-chip-rating" id="art-rating-${song.id}"></span>
+						<span class="art-chip art-chip-listens" id="art-listen-${song.id}">0 listens</span>
+					</div>
+				</div>
+			</div>
+		</div>`;
 	card.innerHTML = `
 		${newBadgeHtml}
+		${albumArtHtml}
 		<div class="card-title-row">
 			<h3 class="card-title">${song.title}</h3>
 		</div>
-		${versionTabsHtml}
 		${versionPanelsHtml}
 	`;
 	return card;
@@ -504,6 +545,8 @@ function selectVersion(songBaseId, index) {
 		if (panel) panel.classList.toggle('active', i === index);
 	});
 
+	selectSong(songBaseId, { scroll: false });
+
 	// If any version of this song is currently playing, switch audio to the selected version
 	const isPlayingThisSong = song.versions
 		? song.versions.some((_, i) => versionId(song, i) === currentSongId)
@@ -520,6 +563,7 @@ function selectVersion(songBaseId, index) {
 		document.querySelectorAll('.version-tab').forEach(t => t.classList.remove('tab-playing'));
 		const newPlayingTab = document.querySelector(`button.version-tab[data-song-id="${songBaseId}"][data-version-index="${index}"]`);
 		if (newPlayingTab) newPlayingTab.classList.add('tab-playing');
+		moveCardToPlayer(songBaseId);
 	}
 }
 
@@ -650,20 +694,70 @@ function updateNowPlayingCard(song) {
 	moveCardToPlayer(song.id);
 }
 
+function syncSidePanelPlaybackState() {
+	const sidePanel = document.getElementById('now-playing-side-panel');
+	const currentBaseSongId = resolveSongAndVersion(currentSongId)?.song?.id;
+	const isShowingCurrentSong = !!selectedSongId && selectedSongId === currentBaseSongId;
+	if (!sidePanel) return;
+
+	sidePanel.classList.toggle('show-playback-state', isShowingCurrentSong);
+	sidePanel.classList.toggle('now-paused', isShowingCurrentSong && !!currentSongId && audioPlayer.paused);
+}
+
+function renderNowPlayingPanel(songId) {
+	const sidePanel = document.getElementById('now-playing-side-panel');
+	const card = document.getElementById(`card-${songId}`);
+	if (!sidePanel || !card) return;
+
+	const clone = card.cloneNode(true);
+	clone.classList.remove('song-card');
+	clone.classList.remove('in-now-playing', 'is-new', 'top-rated', 'now-paused');
+	clone.classList.add('song-card-panel');
+	clone.removeAttribute('id');
+	clone.querySelector('.new-badge')?.remove();
+	clone.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
+
+	sidePanel.innerHTML = '';
+	sidePanel.appendChild(clone);
+	sidePanel.classList.add('active');
+	syncSidePanelPlaybackState();
+}
+
+function selectSong(songId, options = {}) {
+	const { scroll = true } = options;
+	const card = document.getElementById(`card-${songId}`);
+	if (!card) return;
+
+	selectedSongId = songId;
+	selectedCardElement = card;
+	if (scroll) {
+		card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+	}
+
+	renderNowPlayingPanel(songId);
+}
+
 function moveCardToPlayer(songId) {
-	// Deactivate previously playing card
+	// Deactivate previously playing card row highlight
 	if (activeCardElement) {
-		if (activeCardElement.dataset.songId === songId) return;
-		activeCardElement.classList.remove('in-now-playing');
-		activeCardElement = null;
+		if (activeCardElement.dataset.songId !== songId) {
+			activeCardElement.classList.remove('in-now-playing');
+		}
 	}
 
 	const card = document.getElementById(`card-${songId}`);
 	if (!card) return;
 
-	card.classList.add('in-now-playing');
+	const isNewActiveCard = activeCardElement !== card;
 	activeCardElement = card;
-	card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+	// Highlight the list row
+	card.classList.add('in-now-playing');
+	if (isNewActiveCard) {
+		card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+	}
+
+	selectSong(songId, { scroll: false });
 }
 
 function playNextSong() {
@@ -739,6 +833,12 @@ function loadListenCount(songId) {
 		const statKey = baseSong ? baseSong.id : songId;
 		if (!songStats[statKey]) songStats[statKey] = { rating: 0, listens: 0 };
 		songStats[statKey].listens = (songStats[statKey].listens || 0) + count;
+		// Update art overlay listen count with running total
+		const artListenEl = document.getElementById(`art-listen-${statKey}`);
+		if (artListenEl) {
+			const total = songStats[statKey].listens;
+			artListenEl.textContent = `${total} listen${total === 1 ? '' : 's'}`;
+		}
 		debouncedSortSongs();
 	});
 }
@@ -883,8 +983,19 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		const avgElement = document.getElementById(`avg-rating-${songId}`);
 		const countElement = document.getElementById(`rating-count-${songId}`);
 		const pendingHint = guestCount > 0 ? ` · ${guestCount} pending` : '';
-		if (avgElement) avgElement.textContent = average;
+		if (avgElement) avgElement.textContent = `Avg ${average}★`;
 		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'}${isAdminMode ? pendingHint : ''})`;
+
+		// Sync art overlay rating chip (base song, first version only)
+		const artRatingEl = document.getElementById(`art-rating-${songBaseId}`);
+		if (artRatingEl && versionIndex === 0) {
+			if (count > 0) {
+				artRatingEl.textContent = `★ ${average}`;
+				artRatingEl.style.display = '';
+			} else {
+				artRatingEl.style.display = 'none';
+			}
+		}
 
 		updateStarsDisplay(songId, parseFloat(average));
 
@@ -954,8 +1065,17 @@ function revealRating(songId) {
 		ratingEl.classList.remove('rating-hidden');
 		// Now that the user has rated, fill stars with the community average
 		const avgEl = document.getElementById(`avg-rating-${songId}`);
-		if (avgEl) updateStarsDisplay(songId, parseFloat(avgEl.textContent) || 0);
+		if (avgEl) updateStarsDisplay(songId, parseFloat(avgEl.textContent.replace(/[^\d.]/g, '')) || 0);
 	}
+}
+
+function updateSummaryStars(songId, rating) {
+	const starsContainer = document.getElementById(`summary-stars-${songId}`);
+	if (!starsContainer) return;
+
+	starsContainer.querySelectorAll('.summary-star').forEach((star, index) => {
+		star.classList.toggle('user-rated', index < rating);
+	});
 }
 
 function checkUserHasRated(songId) {
@@ -986,6 +1106,7 @@ function checkUserHasRated(songId) {
 function highlightUserRating(songId, rating) {
 	const starsContainer = document.getElementById(`rating-stars-${songId}`);
 	const messageEl = document.getElementById(`rating-message-${songId}`);
+	const summaryUserRatingEl = document.getElementById(`summary-user-rating-${songId}`);
 	
 	if (starsContainer) {
 		const stars = starsContainer.querySelectorAll('.star');
@@ -996,6 +1117,11 @@ function highlightUserRating(songId, rating) {
 				star.classList.remove('user-rated');
 			}
 		});
+	}
+
+	updateSummaryStars(songId, rating);
+	if (summaryUserRatingEl) {
+		summaryUserRatingEl.textContent = `Yours ${rating}★`;
 	}
 	
 	if (messageEl) {
@@ -1067,6 +1193,9 @@ function rateSong(songId, rating) {
 					? ratedBaseSong.versions.findIndex((_, i) => versionId(ratedBaseSong, i) === songId)
 					: 0;
 				markVersionHeard(songId, ratedBaseSong.id, rvi >= 0 ? rvi : 0);
+				if (selectedSongId === ratedBaseSong.id) {
+					renderNowPlayingPanel(selectedSongId);
+				}
 			}
 		})
 		.catch((error) => {
@@ -1153,6 +1282,14 @@ function loadFeedback(songId) {
 			if (numberEl) {
 				numberEl.textContent = commentCount;
 			}
+		}
+
+		// Update hint text
+		const hintEl = document.getElementById(`feedback-hint-${songId}`);
+		if (hintEl) {
+			hintEl.textContent = commentCount > 0
+				? `${commentCount} comment${commentCount === 1 ? '' : 's'}`
+				: 'No comments yet. Be the first to leave feedback.';
 		}
 		
 		if (!feedbackList) return;
