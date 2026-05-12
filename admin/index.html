@@ -43,11 +43,11 @@
             <div class="list-and-panel">
                 <div class="songs-list-column">
                     <div class="song-col-header">
-                        <div class="sch-col">Title</div>
-                        <div class="sch-col">Date</div>
-                        <div class="sch-col">Rating</div>
-                        <div class="sch-col">Listens</div>
-                        <div class="sch-col">Comments</div>
+                        <div class="sch-col sch-sortable" id="sch-title" onclick="setSortMode('title')">Title <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-date" onclick="setSortMode('date')">Date <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-rating" onclick="setSortMode('rating')">Rating <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-listens" onclick="setSortMode('listens')">Listens <span class="sort-arrow"></span></div>
+                        <div class="sch-col sch-sortable" id="sch-comments" onclick="setSortMode('comments')">Comments <span class="sort-arrow"></span></div>
                         <div class="sch-col">Play</div>
                     </div>
                     <section class="songs-grid" id="songs-container">
