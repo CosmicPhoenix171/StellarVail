@@ -280,7 +280,7 @@ body {
 .app-shell {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
     gap: 24px;
     padding: 24px;
     height: 100vh;
@@ -291,9 +291,78 @@ body {
     grid-row: 1;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
     overflow: hidden;
     min-height: 0;
+}
+
+/* Shared panel wrapping song list + player bar */
+.list-player-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(10, 5, 20, 0.55);
+    border-radius: 24px;
+    border: var(--glass-border);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Aurora northern lights glow — hints more songs below */
+.list-player-panel::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    pointer-events: none;
+    z-index: 3;
+    transition: opacity 0.5s ease;
+    opacity: 1;
+}
+
+.list-player-panel::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 380px;
+    background:
+        linear-gradient(to top,
+            rgba(0, 180, 130, 0.82) 0%,
+            rgba(0, 225, 160, 0.95) 6%,
+            rgba(0, 230, 190, 0.90) 18%,
+            rgba(0, 210, 220, 0.80) 28%,
+            rgba(20, 160, 255, 0.60) 42%,
+            rgba(80, 100, 255, 0.30) 58%,
+            rgba(160, 0, 255, 0.12) 75%,
+            transparent 100%
+        );
+    pointer-events: none;
+    z-index: 4;
+    animation: auroraBottomPulse 4s ease-in-out infinite;
+    transition: opacity 0.5s ease;
+    opacity: 1;
+}
+
+.list-player-panel.at-bottom::before,
+.list-player-panel.at-bottom::after {
+    opacity: 0;
+}
+
+@keyframes auroraBottomPulse {
+    0%   { background-position: 0% 0%;   filter: blur(8px)  hue-rotate(0deg); }
+    33%  { background-position: 60% 0%;  filter: blur(12px) hue-rotate(30deg); }
+    66%  { background-position: 30% 0%;  filter: blur(6px)  hue-rotate(-20deg); }
+    100% { background-position: 0% 0%;   filter: blur(8px)  hue-rotate(0deg); }
 }
 
 .main-content {
@@ -484,6 +553,7 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
+    padding-bottom: 90px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -494,11 +564,13 @@ body {
 .songs-grid::-webkit-scrollbar { width: 6px; }
 .songs-grid::-webkit-scrollbar-track { background: transparent; }
 .songs-grid::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 255, 120, 0.55);
     border-radius: 6px;
+    box-shadow: 0 0 6px rgba(0, 255, 120, 0.7), 0 0 12px rgba(0, 255, 120, 0.35);
 }
 .songs-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(0, 255, 120, 0.8);
+    box-shadow: 0 0 10px rgba(0, 255, 120, 0.9), 0 0 20px rgba(0, 255, 120, 0.5);
 }
 
 /* ===== LIST + PANEL LAYOUT ===== */
@@ -525,6 +597,39 @@ body {
 /* Shared column template — used by header and every row */
 :root {
     --song-grid: repeat(6, 1fr);
+}
+
+/* ===== FILTER CHIP (in header) ===== */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 0.65em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.65);
+    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+}
+
+.filter-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.filter-chip.filter-chip-active {
+    background: rgba(0, 243, 255, 0.12);
+    border-color: rgba(0, 243, 255, 0.45);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.25);
 }
 
 /* ===== COLUMN HEADER ===== */
@@ -1223,8 +1328,7 @@ body {
 }
 
 .summary-star {
-    font-size: 2.
-    em;
+    font-size: 1.1rem;
     line-height: 1;
     color: rgba(255, 255, 255, 0.18);
     text-shadow: none;
@@ -1993,17 +2097,72 @@ body {
 }
 
 .player-bar {
-    grid-column: 1;
-    background: rgba(10, 5, 20, 0.8);
-    border-radius: 30px;
-    border: var(--glass-border);
-    padding: 18px 28px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 28px;
     display: flex;
     align-items: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    align-self: end;
+    flex-shrink: 0;
+    /* Aurora-toned frosted glass — the bar IS the aurora source */
+    background: linear-gradient(to top,
+        rgba(0, 8, 10, 0.70) 0%,
+        rgba(0, 12, 14, 0.45) 50%,
+        transparent 100%
+    );
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    -webkit-mask-image: linear-gradient(to top, black 40%, transparent 100%);
+    mask-image: linear-gradient(to top, black 40%, transparent 100%);
+    box-shadow:
+        0 -4px 20px rgba(0, 255, 160, 0.14),
+        0 -14px 44px rgba(0, 220, 200, 0.08);
     z-index: 20;
+    overflow: hidden;
+}
+
+/* Animated aurora shimmer on the bar surface */
+.player-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+        transparent 0%,
+        rgba(0, 255, 160, 0.06) 25%,
+        rgba(0, 220, 200, 0.10) 45%,
+        rgba(0, 180, 255, 0.07) 65%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: barAuroraShimmer 5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Upward bloom from bar's top edge */
+.player-bar::after {
+    content: '';
+    position: absolute;
+    top: -18px;
+    left: 0;
+    right: 0;
+    height: 18px;
+    background: linear-gradient(to top,
+        rgba(0, 255, 160, 0.22) 0%,
+        rgba(0, 240, 180, 0.10) 50%,
+        transparent 100%
+    );
+    filter: blur(3px);
+    pointer-events: none;
+    z-index: 0;
+    animation: barAuroraShimmer 5s ease-in-out infinite;
+}
+
+@keyframes barAuroraShimmer {
+    0%   { background-position: 0% 0%;    filter: blur(3px) hue-rotate(0deg); }
+    50%  { background-position: 100% 0%;  filter: blur(5px) hue-rotate(25deg); }
+    100% { background-position: 0% 0%;    filter: blur(3px) hue-rotate(0deg); }
 }
 
 .player-bar.hidden {
@@ -2012,8 +2171,11 @@ body {
 
 #audio-player {
     width: 100%;
-    filter: invert(1) hue-rotate(180deg) saturate(1.5);
-    opacity: 0.9;
+    /* Shift browser chrome to aurora teal/green tones */
+    filter: invert(1) hue-rotate(155deg) saturate(2) brightness(0.92) drop-shadow(0 0 6px rgba(0, 255, 160, 0.35));
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
 }
 
 @media (max-width: 1200px) {

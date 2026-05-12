@@ -17,9 +17,17 @@ let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
 let pendingRating = null; // { songId, rating } stored when a guest tries to rate
-const isAdminMode = window.location.pathname.includes('/admin');
+// Usernames that get admin powers (all ratings visible, listen count not incremented)
+const ADMIN_USERNAMES = ['Phoenix'];
+
+function checkAdminMode() {
+	const username = localStorage.getItem('sv_username');
+	return ADMIN_USERNAMES.includes(username);
+}
+
+let isAdminMode = checkAdminMode();
 const listenedEnough = new Set(); // version IDs where user has passed 75%
-const basePath = isAdminMode ? '../' : '';
+const basePath = '';
 
 // Songs the current listener has heard (any version). Persisted in localStorage.
 const heardSongs = new Set(JSON.parse(localStorage.getItem('sv_heard') || '[]'));
@@ -56,9 +64,6 @@ function formatDate(dateString) {
 const audioPlayer = document.getElementById('audio-player');
 const songsContainer = document.getElementById('songs-container');
 const playerBar = document.querySelector('.player-bar');
-
-// Hide player until a song is selected
-if (playerBar) playerBar.classList.add('hidden');
 
 // ===== HIDE UI MODE =====
 let uiHidden = false;
@@ -174,6 +179,7 @@ audioPlayer.addEventListener('ended', stopStarBoost);
 // ===== SONG SORTING =====
 let currentSortMode = 'date'; // 'rating', 'date', 'listens', 'comments', 'title'
 let currentSortDir = 'desc'; // 'asc' or 'desc'
+let filterUnrated = false; // show only songs user hasn't rated yet
 
 function setSortMode(mode) {
 	if (mode === currentSortMode) {
@@ -280,6 +286,28 @@ function sortSongCards() {
 	
 	// Mark top 12 highest-rated songs with golden glow
 	markTop12RatedSongs();
+	// Re-apply unrated filter after sort
+	applyUnratedFilter();
+}
+
+function toggleUnratedFilter() {
+	filterUnrated = !filterUnrated;
+	const btn = document.getElementById('filter-unrated-btn');
+	if (btn) btn.classList.toggle('filter-chip-active', filterUnrated);
+	applyUnratedFilter();
+}
+
+function applyUnratedFilter() {
+	const cards = songsContainer.querySelectorAll('.song-card:not(.placeholder-card)');
+	cards.forEach(card => {
+		if (!filterUnrated) {
+			card.style.display = '';
+			return;
+		}
+		// Card is "rated" if any summary-rating inside it has had rating-hidden removed
+		const rated = card.querySelector('.summary-rating:not(.rating-hidden)') !== null;
+		card.style.display = rated ? 'none' : '';
+	});
 }
 
 // Mark top 12 highest-rated songs with a golden glow
@@ -406,6 +434,8 @@ function renderSongs() {
 	
 	// Sort immediately after render (especially for date sorting)
 	sortSongCards();
+	// Re-check aurora now that songs are in the DOM
+	if (window._updateAurora) window._updateAurora();
 
 	const playingBaseSongId = resolveSongAndVersion(currentSongId)?.song?.id;
 	const defaultSongId = playingBaseSongId || selectedSongId || songsContainer.querySelector('.song-card')?.dataset.songId;
@@ -435,8 +465,8 @@ function createSongCard(song) {
 	const ratingHiddenClass = isAdminMode ? '' : 'rating-hidden';
 
 	// Format date for display
-	const dateAdded = song.dateAdded ? formatDate(song.dateAdded) : '';
-	const dateHtml = dateAdded ? `<span class="date-added">${dateAdded}</span>` : '';
+	const dateAdded = song.dateAdded ? formatDate(song.dateAdded) : 'Unknown date';
+	const dateHtml = `<span class="date-added">${dateAdded}</span>`;
 
 	// Build version tabs HTML — always shown; single-version songs get an "Original" tab
 	const hasVersions = song.versions && song.versions.length > 1;
@@ -460,10 +490,13 @@ function createSongCard(song) {
 	// Version panels — one per version, each with its own metrics/rating/comments
 	const versionPanelsHtml = (song.versions || [{ filename: song.filename, label: '' }]).map((v, i) => {
 		const vid = versionId(song, i);
+		// Use per-version date if available, else fall back to song date, else placeholder
+		const vDate = v.dateAdded ? formatDate(v.dateAdded) : (dateAdded || 'Unknown date');
+		const vDateHtml = `<span class="date-added">${vDate}</span>`;
 		return `
 		<div class="version-panel${i === 0 ? ' active' : ''}" id="version-panel-${song.id}-${i}">
 			<div class="card-meta-row">
-				${i === 0 ? (dateHtml || '') : ''}
+				${vDateHtml}
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${vid}">
 					<div class="summary-stars" id="summary-stars-${vid}" aria-hidden="true">
 						${Array.from({ length: 5 }, () => '<span class="summary-star">★</span>').join('')}
@@ -531,7 +564,7 @@ function createSongCard(song) {
 				<div class="art-overlay-bottom">
 					${versionTabsHtml}
 					<div class="art-meta-chips">
-						${dateAdded ? `<span class="art-chip art-chip-date">${dateAdded}</span>` : ''}
+						<span class="art-chip art-chip-date">${dateAdded}</span>
 						<span class="art-chip art-chip-rating" id="art-rating-${song.id}"></span>
 						<span class="art-chip art-chip-listens" id="art-listen-${song.id}">0 listens</span>
 					</div>
@@ -795,7 +828,8 @@ function playNextSong() {
 		return;
 	}
 
-	const allCards = Array.from(songsContainer.querySelectorAll('.song-card'));
+	// Read cards in their current DOM order — this reflects the active sort
+	const allCards = Array.from(songsContainer.querySelectorAll('.song-card:not(.placeholder-card)'));
 	const sortedBaseIds = allCards.map(card => card.dataset.songId);
 
 	// currentSongId might be a versionId — find the base song
@@ -1068,22 +1102,31 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 }
 
 function updateStarsDisplay(songId, average) {
-	const starsContainer = document.getElementById(`rating-stars-${songId}`);
-	if (!starsContainer) return;
-
 	// Only fill stars with the community average after the user has rated this version.
 	// Until then the stars stay empty so the average doesn't influence their choice.
 	const summaryEl = document.getElementById(`summary-rating-${songId}`);
 	const userHasRated = summaryEl && !summaryEl.classList.contains('rating-hidden');
 	if (!userHasRated) return;
 
-	starsContainer.querySelectorAll('.star').forEach((star, index) => {
-		if (index < Math.round(average)) {
-			star.classList.add('filled');
-		} else {
-			star.classList.remove('filled');
-		}
-	});
+	// Fill the interactive rating widget
+	const starsContainer = document.getElementById(`rating-stars-${songId}`);
+	if (starsContainer) {
+		starsContainer.querySelectorAll('.star').forEach((star, index) => {
+			if (index < Math.round(average)) {
+				star.classList.add('filled');
+			} else {
+				star.classList.remove('filled');
+			}
+		});
+	}
+
+	// Fill the big display summary stars with the community average
+	const summaryStars = document.getElementById(`summary-stars-${songId}`);
+	if (summaryStars) {
+		summaryStars.querySelectorAll('.summary-star').forEach((star, index) => {
+			star.classList.toggle('user-rated', index < Math.round(average));
+		});
+	}
 }
 
 function revealRating(songId) {
@@ -1094,15 +1137,14 @@ function revealRating(songId) {
 		const avgEl = document.getElementById(`avg-rating-${songId}`);
 		if (avgEl) updateStarsDisplay(songId, parseFloat(avgEl.textContent.replace(/[^\d.]/g, '')) || 0);
 	}
+	// If the unrated filter is active, hide this card now that it's been rated
+	if (filterUnrated) applyUnratedFilter();
 }
 
 function updateSummaryStars(songId, rating) {
-	const starsContainer = document.getElementById(`summary-stars-${songId}`);
-	if (!starsContainer) return;
-
-	starsContainer.querySelectorAll('.summary-star').forEach((star, index) => {
-		star.classList.toggle('user-rated', index < rating);
-	});
+	// Summary stars now show community average (handled by updateStarsDisplay).
+	// This function is kept for compatibility but no longer overwrites the display.
+	// The user's personal rating is shown via the summary-user-rating text element.
 }
 
 function checkUserHasRated(songId) {
@@ -1663,14 +1705,20 @@ function updateUserDisplay() {
 	const displayEl = document.getElementById('user-name-display');
 	if (displayEl) {
 		const name = getDisplayName();
-		displayEl.textContent = name;
+		displayEl.textContent = isAdminMode ? `${name} ★` : name;
 		
-		// Update status dot color if signed in
+		// Update status dot color
 		const statusDot = displayEl.previousElementSibling;
 		if (statusDot && statusDot.classList.contains('status-dot')) {
-			if (name !== 'Guest') {
+			if (isAdminMode) {
+				statusDot.style.background = '#ff00ff';
+				statusDot.style.boxShadow = '0 0 8px #ff00ff';
+			} else if (name !== 'Guest') {
 				statusDot.style.background = '#00ff88';
 				statusDot.style.boxShadow = '0 0 8px #00ff88';
+			} else {
+				statusDot.style.background = '';
+				statusDot.style.boxShadow = '';
 			}
 		}
 	}
@@ -1769,6 +1817,8 @@ function handleLogin() {
 	// Save username and update clientId
 	localStorage.setItem('sv_username', username);
 	clientId = getClientId(); // Refresh clientId with new username
+	const wasAdmin = isAdminMode;
+	isAdminMode = checkAdminMode();
 	
 	statusEl.textContent = 'Signing in...';
 	statusEl.classList.remove('error');
@@ -1776,14 +1826,16 @@ function handleLogin() {
 	// Transfer guest ratings to the new user account
 	if (oldGuestId && typeof database !== 'undefined') {
 		transferGuestRatings(oldGuestId, newUserId, () => {
-			statusEl.textContent = `Signed in as ${username}!`;
+			statusEl.textContent = `Signed in as ${username}${isAdminMode ? ' (Admin)' : ''}!`;
 			updateUserDisplay();
+			if (isAdminMode !== wasAdmin && songsData.length) renderSongs();
 			applyPendingRating();
 			setTimeout(() => hideLoginPopup(), 1000);
 		});
 	} else {
-		statusEl.textContent = `Signed in as ${username}!`;
+		statusEl.textContent = `Signed in as ${username}${isAdminMode ? ' (Admin)' : ''}!`;
 		updateUserDisplay();
+		if (isAdminMode !== wasAdmin && songsData.length) renderSongs();
 		applyPendingRating();
 		setTimeout(() => hideLoginPopup(), 1000);
 	}
@@ -1859,8 +1911,10 @@ function transferGuestRatings(oldGuestId, newUserId, callback) {
 }
 
 function handleLogout() {
+	const wasAdmin = isAdminMode;
 	localStorage.removeItem('sv_username');
 	clientId = getClientId(); // Refresh to guest ID
+	isAdminMode = checkAdminMode();
 	
 	const statusEl = document.getElementById('login-status');
 	const logoutBtn = document.getElementById('logout-btn');
@@ -1872,6 +1926,7 @@ function handleLogout() {
 	usernameInput.value = '';
 	
 	updateUserDisplay();
+	if (isAdminMode !== wasAdmin && songsData.length) renderSongs();
 	
 	setTimeout(() => {
 		hideLoginPopup();
@@ -1882,6 +1937,18 @@ function handleLogout() {
 document.addEventListener('DOMContentLoaded', () => {
 	updateUserDisplay();
 	setSortMode('date'); // highlight default column header
+
+	// Hide aurora hint when song list is scrolled to the end
+	const songsGrid = document.getElementById('songs-container');
+	const listPanel = songsGrid?.closest('.list-player-panel');
+	if (songsGrid && listPanel) {
+		window._updateAurora = () => {
+			const atBottom = songsGrid.scrollTop + songsGrid.clientHeight >= songsGrid.scrollHeight - 4;
+			listPanel.classList.toggle('at-bottom', atBottom);
+		};
+		songsGrid.addEventListener('scroll', window._updateAurora, { passive: true });
+		window._updateAurora();
+	}
 });
 
 // ===== PERFORMANCE MODE (always on) =====

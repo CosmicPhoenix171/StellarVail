@@ -27,6 +27,7 @@
                         <button id="sort-listens-btn" class="sort-btn" onclick="setSortMode('listens')">🎧 Most Played</button>
                     </div>
                     <div class="top-bar-right">
+                        <button id="filter-unrated-btn" class="filter-chip" onclick="toggleUnratedFilter()" title="Show only songs you haven't rated yet">Unrated only</button>
                         <div class="control-btns">
                             <button id="random-btn" onclick="playRandomSong()" title="Surprise Me">🎲</button>
                             <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle: OFF">🔀</button>
@@ -40,27 +41,28 @@
                 </header>
             </main>
 
-            <div class="list-and-panel">
-                <div class="songs-list-column">
-                    <div class="song-col-header">
-                        <div class="sch-col sch-sortable" id="sch-title" onclick="setSortMode('title')">Title <span class="sort-arrow"></span></div>
-                        <div class="sch-col sch-sortable" id="sch-date" onclick="setSortMode('date')">Date <span class="sort-arrow"></span></div>
-                        <div class="sch-col sch-sortable" id="sch-rating" onclick="setSortMode('rating')">Rating <span class="sort-arrow"></span></div>
-                        <div class="sch-col sch-sortable" id="sch-listens" onclick="setSortMode('listens')">Listens <span class="sort-arrow"></span></div>
-                        <div class="sch-col sch-sortable" id="sch-comments" onclick="setSortMode('comments')">Comments <span class="sort-arrow"></span></div>
-                        <div class="sch-col">Play</div>
+            <div class="list-player-panel">
+                <div class="list-and-panel">
+                    <div class="songs-list-column">
+                        <div class="song-col-header">
+                            <div class="sch-col sch-sortable" id="sch-title" onclick="setSortMode('title')">Title <span class="sort-arrow"></span></div>
+                            <div class="sch-col sch-sortable" id="sch-date" onclick="setSortMode('date')">Date <span class="sort-arrow"></span></div>
+                            <div class="sch-col sch-sortable" id="sch-rating" onclick="setSortMode('rating')">Rating <span class="sort-arrow"></span></div>
+                            <div class="sch-col sch-sortable" id="sch-listens" onclick="setSortMode('listens')">Listens <span class="sort-arrow"></span></div>
+                            <div class="sch-col sch-sortable" id="sch-comments" onclick="setSortMode('comments')">Comments <span class="sort-arrow"></span></div>
+                            <div class="sch-col">Play</div>
+                        </div>
+                        <section class="songs-grid" id="songs-container">
+                            <!-- Songs will be dynamically loaded here -->
+                        </section>
                     </div>
-                    <section class="songs-grid" id="songs-container">
-                        <!-- Songs will be dynamically loaded here -->
-                    </section>
-                </div>
 
+                </div>
+                <footer class="player-bar">
+                    <audio id="audio-player" controls controlsList="nodownload" oncontextmenu="return false;"></audio>
+                </footer>
             </div>
         </div>
-
-        <footer class="player-bar">
-            <audio id="audio-player" controls controlsList="nodownload" oncontextmenu="return false;"></audio>
-        </footer>
 
         <div class="now-playing-side-panel" id="now-playing-side-panel">
             <!-- Populated by JS when a song plays -->
