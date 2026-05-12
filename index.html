@@ -67,6 +67,21 @@
         </div>
     </div>
 
+    <!-- Comment Popup Modal -->
+    <div id="comment-popup" class="rating-popup-overlay" style="display: none;" onclick="if(event.target===this)closeCommentPopup()">
+        <div class="rating-popup-modal comment-popup-modal">
+            <h2>Leave a Comment</h2>
+            <p id="comment-popup-song-title" class="rating-popup-song"></p>
+            <textarea id="comment-popup-text" class="comment-popup-textarea" placeholder="Write a comment..." maxlength="500"></textarea>
+            <input type="hidden" id="comment-popup-timestamp" value="">
+            <div class="comment-popup-actions">
+                <button type="button" class="timestamp-btn" onclick="addTimestampPopup()" title="Add current timestamp">⏱ Timestamp</button>
+                <button class="login-submit-btn" onclick="submitFeedbackPopup()">Post</button>
+                <button class="rating-popup-skip-btn" onclick="closeCommentPopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Rating Popup Modal -->
     <div id="rating-popup" class="rating-popup-overlay" style="display: none;">
         <div class="rating-popup-modal">

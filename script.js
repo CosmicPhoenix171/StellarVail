@@ -476,21 +476,10 @@ function createSongCard(song) {
 							<h4>Comments</h4>
 							<p class="feedback-hint" id="feedback-hint-${vid}">No comments yet. Be the first to leave feedback.</p>
 						</div>
-						<button type="button" class="feedback-toggle" onclick="toggleFeedback('${vid}')">▲</button>
+						<button type="button" class="add-comment-btn" onclick="openCommentPopup('${vid}')">+ Add Comment</button>
 					</div>
-					<div class="feedback-body" id="feedback-body-${vid}">
-						<div class="feedback-form">
-							<input type="text" id="feedback-name-${vid}" placeholder="Name (optional)" maxlength="50">
-							<textarea id="feedback-text-${vid}" placeholder="Write a comment..." maxlength="500"></textarea>
-							<input type="hidden" id="feedback-timestamp-${vid}" value="">
-							<div class="feedback-actions">
-								<button type="button" class="timestamp-btn" onclick="addTimestamp('${vid}')" title="Add current timestamp">⏱ Timestamp</button>
-								<button class="submit-btn" onclick="submitFeedback('${vid}')">Post</button>
-							</div>
-						</div>
-						<div class="feedback-list" id="feedback-list-${vid}">
-							<p class="no-feedback">No comments yet. Be the first!</p>
-						</div>
+					<div class="feedback-list" id="feedback-list-${vid}">
+						<p class="no-feedback">No comments yet. Be the first!</p>
 					</div>
 				</div>
 			</div>
@@ -728,8 +717,15 @@ function selectSong(songId, options = {}) {
 	const card = document.getElementById(`card-${songId}`);
 	if (!card) return;
 
+	// Clear selection highlight from previous card
+	if (selectedCardElement && selectedCardElement !== card) {
+		selectedCardElement.classList.remove('panel-selected');
+	}
+
 	selectedSongId = songId;
 	selectedCardElement = card;
+	card.classList.add('panel-selected');
+
 	if (scroll) {
 		card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 	}
@@ -1336,8 +1332,67 @@ function loadFeedback(songId) {
 	});
 }
 
+// ===== COMMENT POPUP =====
+let commentPopupVid = null;
+
+function openCommentPopup(vid) {
+	commentPopupVid = vid;
+	const popup = document.getElementById('comment-popup');
+	const titleEl = document.getElementById('comment-popup-song-title');
+	const textarea = document.getElementById('comment-popup-text');
+	const tsInput = document.getElementById('comment-popup-timestamp');
+	if (!popup) return;
+	// Try to get a label from the version tab
+	const tabEl = document.querySelector(`[data-song-id][data-version-index][data-tab="true"][onclick*="'${vid.split('-')[0]}'"]`);
+	if (titleEl) titleEl.textContent = '';
+	if (textarea) textarea.value = '';
+	if (tsInput) tsInput.value = '';
+	popup.style.display = 'flex';
+	if (textarea) textarea.focus();
+}
+
+function closeCommentPopup() {
+	const popup = document.getElementById('comment-popup');
+	if (popup) popup.style.display = 'none';
+	commentPopupVid = null;
+}
+
+function addTimestampPopup() {
+	if (!audioPlayer.src || audioPlayer.paused) {
+		alert('Please play the song first to add a timestamp');
+		return;
+	}
+	const currentTime = audioPlayer.currentTime;
+	const tsInput = document.getElementById('comment-popup-timestamp');
+	const textarea = document.getElementById('comment-popup-text');
+	if (tsInput) tsInput.value = currentTime.toFixed(2);
+	if (textarea) {
+		const timeStr = formatSongTime(currentTime);
+		const prefix = textarea.value ? ' ' : '';
+		textarea.value += `${prefix}[${timeStr}]`;
+		textarea.focus();
+	}
+}
+
+function submitFeedbackPopup() {
+	if (!commentPopupVid) return;
+	const songId = commentPopupVid;
+	const textarea = document.getElementById('comment-popup-text');
+	const tsInput = document.getElementById('comment-popup-timestamp');
+	const comment = textarea ? textarea.value.trim() : '';
+	if (!comment) { alert('Please enter a comment'); return; }
+	const displayName = localStorage.getItem('sv_username') || 'Anonymous';
+	const songTimestamp = tsInput && tsInput.value ? parseFloat(tsInput.value) : undefined;
+	if (typeof database === 'undefined') return;
+	const feedbackRef = database.ref(`songs/${songId}/feedback/${clientId}`);
+	const payload = { displayName, comment, clientId, timestamp: Date.now() };
+	if (typeof songTimestamp === 'number' && !Number.isNaN(songTimestamp)) payload.songTimestamp = songTimestamp;
+	feedbackRef.set(payload)
+		.then(() => { closeCommentPopup(); })
+		.catch((error) => { console.error('Error saving feedback:', error); alert('Error posting comment. Please try again.'); });
+}
+
 function submitFeedback(songId) {
-	const nameInput = document.getElementById(`feedback-name-${songId}`);
 	const textInput = document.getElementById(`feedback-text-${songId}`);
 	const timestampInput = document.getElementById(`feedback-timestamp-${songId}`);
 
@@ -1347,7 +1402,7 @@ function submitFeedback(songId) {
 		return;
 	}
 
-	const displayName = nameInput.value.trim() || 'Anonymous';
+	const displayName = localStorage.getItem('sv_username') || 'Anonymous';
 	const songTimestamp = timestampInput.value ? parseFloat(timestampInput.value) : undefined;
 
 	if (typeof database === 'undefined') return;
@@ -1366,7 +1421,6 @@ function submitFeedback(songId) {
 	feedbackRef
 		.set(payload)
 		.then(() => {
-			nameInput.value = '';
 			textInput.value = '';
 			timestampInput.value = '';
 		})
@@ -1459,16 +1513,13 @@ function shouldIgnoreHotkey(event) {
 // Prefill feedback form with an existing comment so the current device can edit/overwrite it.
 function prefillFeedback(songId, buttonEl) {
 	if (!buttonEl) return;
-	const name = decodeURIComponent(buttonEl.getAttribute('data-name') || '');
 	const comment = decodeURIComponent(buttonEl.getAttribute('data-comment') || '');
 	const tsAttr = buttonEl.getAttribute('data-song-timestamp');
 	const songTimestamp = tsAttr ? parseFloat(tsAttr) : '';
 
-	const nameInput = document.getElementById(`feedback-name-${songId}`);
 	const textInput = document.getElementById(`feedback-text-${songId}`);
 	const timestampInput = document.getElementById(`feedback-timestamp-${songId}`);
 
-	if (nameInput) nameInput.value = name || '';
 	if (textInput) {
 		textInput.value = comment || '';
 		textInput.focus();
