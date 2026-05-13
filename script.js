@@ -2011,20 +2011,17 @@ function initAuroraCanvas() {
 
 	// Wave bands — from bottom (yFrac near 1.0) to top (yFrac near 0)
 	const waves = [
-		// ── Dense bottom zone: bright greens ──
 		makeWave(0,   255, 140, 0.98, 8,  1.8, 0.004, 0,    14, 22, 0.85),
 		makeWave(0,   240, 160, 0.93, 12, 2.2, 0.003, 1.1,  10, 18, 0.80),
 		makeWave(0,   220, 190, 0.87, 16, 1.5, 0.0035,2.3,  8,  16, 0.72),
 		makeWave(30,  200, 210, 0.80, 20, 2.8, 0.0025,0.7,  6,  14, 0.60),
-		// ── Mid zone: cyan/teal ──
 		makeWave(0,   190, 255, 0.72, 26, 1.9, 0.002, 3.5,  5,  12, 0.42),
 		makeWave(0,   210, 230, 0.64, 30, 2.4, 0.0018,1.8,  4,  10, 0.30),
-		makeWave(40,  130, 255, 0.55, 35, 1.6, 0.0015,4.2,  3,  9,  0.22),
 	];
 
 	// Vertical rays — anchored to specific wave bands, rooted at a point on the wave
 	// Each ray's base x, y, and tilt are computed live from the wave each frame
-	const rays = Array.from({ length: 120 }, () => {
+	const rays = Array.from({ length: 240 }, () => {
 		// Attach to one of the lower 7 waves (the visible colored ones)
 		const waveIndex = Math.floor(Math.random() * 7);
 		return {
@@ -2112,6 +2109,14 @@ function initAuroraCanvas() {
 				ctx.closePath();
 			};
 
+			const buildRayClipPath = () => {
+				ctx.beginPath();
+				pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+				ctx.lineTo(w, 0);
+				ctx.lineTo(0, 0);
+				ctx.closePath();
+			};
+
 			// Fill: blend horizontal color band with vertical fade — all in one gradient pair
 			// Use a canvas offscreen trick: draw with horizontal grad, alpha driven by vertical position
 			buildFillPath();
@@ -2128,34 +2133,64 @@ function initAuroraCanvas() {
 			ctx.fillStyle = simpleFill;
 			ctx.fill();
 
-			// Rays: drawn clipped to the fill shape so they live inside the wave
+			// Rays: clipped above the hard line so they rise into the curtain
 			const waveRays = raysByWave.get(wi);
 			if (waveRays) {
 				ctx.save();
-				buildFillPath();
+				buildRayClipPath();
 				ctx.clip();
 
-				waveRays.forEach(ray => {
+				const raySegments = waveRays.map(ray => {
 					ray.pulsePhase += ray.pulseSpeed;
 					const op = ray.opacity * (0.5 + 0.5 * Math.sin(ray.pulsePhase));
 					const xPos = ray.xFrac * w;
 					const rootY = yBase + Math.sin((xPos / w) * w_.freq * TWO_PI + totalPhase) * w_.amp;
-					const rayH = ray.height;
+					return { ray, op, xPos, rootY, rayH: ray.height };
+				}).sort((a, b) => a.xPos - b.xPos);
+
+				// Soft curtain fabric between nearby rays. Bigger gaps become more transparent.
+				for (let i = 0; i < raySegments.length - 1; i++) {
+					const left = raySegments[i];
+					const right = raySegments[i + 1];
+					const gap = right.xPos - left.xPos;
+					const maxGap = w * 0.12;
+					const closeness = Math.max(0, 1 - gap / maxGap);
+					if (closeness <= 0) continue;
+
+					const bandHeight = Math.min(left.rayH, right.rayH) * (0.65 + closeness * 0.25);
+					const rootY = (left.rootY + right.rootY) / 2;
+					const bandAlpha = ((left.op + right.op) / 2) * w_.alpha * 0.22 * closeness;
+					const bandGrad = ctx.createLinearGradient(0, rootY, 0, rootY - bandHeight);
+					bandGrad.addColorStop(0,   `rgba(${r},${g},${b},${bandAlpha.toFixed(3)})`);
+					bandGrad.addColorStop(0.45,`rgba(${r},${g},${b},${(bandAlpha * 0.45).toFixed(3)})`);
+					bandGrad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+
+					ctx.fillStyle = bandGrad;
+					ctx.beginPath();
+					ctx.moveTo(left.xPos, left.rootY);
+					ctx.lineTo(right.xPos, right.rootY);
+					ctx.lineTo(right.xPos, right.rootY - bandHeight);
+					ctx.lineTo(left.xPos, left.rootY - bandHeight);
+					ctx.closePath();
+					ctx.fill();
+				}
+
+				raySegments.forEach(({ ray, op, xPos, rootY, rayH }) => {
 
 					ctx.save();
 					ctx.translate(xPos, rootY);
 					// no rotation — rays stay perfectly vertical
 
-					// Glow halo — goes downward into the fill
-					const haloGrad = ctx.createLinearGradient(0, 0, 0, rayH);
+					// Glow halo — rises upward from the bottom edge
+					const haloGrad = ctx.createLinearGradient(0, 0, 0, -rayH);
 					haloGrad.addColorStop(0,   `rgba(${r},${g},${b},${(op * 0.40).toFixed(3)})`);
 					haloGrad.addColorStop(0.5, `rgba(${r},${g},${b},${(op * 0.15).toFixed(3)})`);
 					haloGrad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
 					ctx.fillStyle = haloGrad;
-					ctx.fillRect(-ray.glowWidth / 2, 0, ray.glowWidth, rayH);
+					ctx.fillRect(-ray.glowWidth / 2, -rayH, ray.glowWidth, rayH);
 
-					// Crisp line going downward
-					const lineGrad = ctx.createLinearGradient(0, 0, 0, rayH);
+					// Crisp ripple line rising upward
+					const lineGrad = ctx.createLinearGradient(0, 0, 0, -rayH);
 					lineGrad.addColorStop(0,    `rgba(${r},${g},${b},${op.toFixed(3)})`);
 					lineGrad.addColorStop(0.55, `rgba(${r},${g},${b},${(op * 0.35).toFixed(3)})`);
 					lineGrad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
@@ -2163,7 +2198,7 @@ function initAuroraCanvas() {
 					ctx.lineWidth = ray.width;
 					ctx.beginPath();
 					ctx.moveTo(0, 0);
-					ctx.lineTo(0, rayH);
+					ctx.lineTo(0, -rayH);
 					ctx.stroke();
 
 					ctx.restore();
