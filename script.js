@@ -2145,34 +2145,57 @@ function initAuroraCanvas() {
 					const op = ray.opacity * (0.5 + 0.5 * Math.sin(ray.pulsePhase));
 					const xPos = ray.xFrac * w;
 					const rootY = yBase + Math.sin((xPos / w) * w_.freq * TWO_PI + totalPhase) * w_.amp;
-					return { ray, op, xPos, rootY, rayH: ray.height };
+					const topY = rootY - ray.height;
+					return { ray, op, xPos, rootY, rayH: ray.height, topY };
 				}).sort((a, b) => a.xPos - b.xPos);
 
-				// Soft curtain fabric between nearby rays. Bigger gaps become more transparent.
-				for (let i = 0; i < raySegments.length - 1; i++) {
-					const left = raySegments[i];
-					const right = raySegments[i + 1];
-					const gap = right.xPos - left.xPos;
-					const maxGap = w * 0.12;
-					const closeness = Math.max(0, 1 - gap / maxGap);
-					if (closeness <= 0) continue;
+				// Continuous curtain fabric: bottom follows the bright edge roots, top follows ripple heights.
+				if (raySegments.length >= 2) {
+					let avgOpacity = 0;
+					let gapOpacity = 0;
+					for (let i = 0; i < raySegments.length; i++) {
+						avgOpacity += raySegments[i].op;
+						if (i < raySegments.length - 1) {
+							const gap = raySegments[i + 1].xPos - raySegments[i].xPos;
+							const maxGap = w * 0.07;
+							gapOpacity += Math.max(0, 1 - gap / maxGap);
+						}
+					}
+					avgOpacity /= raySegments.length;
+					gapOpacity /= Math.max(1, raySegments.length - 1);
+					const sheetAlpha = Math.max(0.08, avgOpacity * (0.38 + w_.alpha * 0.78) * gapOpacity);
 
-					const bandHeight = Math.min(left.rayH, right.rayH) * (0.65 + closeness * 0.25);
-					const rootY = (left.rootY + right.rootY) / 2;
-					const bandAlpha = ((left.op + right.op) / 2) * w_.alpha * 0.22 * closeness;
-					const bandGrad = ctx.createLinearGradient(0, rootY, 0, rootY - bandHeight);
-					bandGrad.addColorStop(0,   `rgba(${r},${g},${b},${bandAlpha.toFixed(3)})`);
-					bandGrad.addColorStop(0.45,`rgba(${r},${g},${b},${(bandAlpha * 0.45).toFixed(3)})`);
-					bandGrad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+					const fabricGrad = ctx.createLinearGradient(0, yBase, 0, Math.min(...raySegments.map(segment => segment.topY)));
+					fabricGrad.addColorStop(0, `rgba(${r},${g},${b},${sheetAlpha.toFixed(3)})`);
+					fabricGrad.addColorStop(0.45, `rgba(${r},${g},${b},${(sheetAlpha * 0.55).toFixed(3)})`);
+					fabricGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
 
-					ctx.fillStyle = bandGrad;
+					ctx.shadowBlur = 18;
+					ctx.shadowColor = `rgba(${r},${g},${b},${(sheetAlpha * 0.85).toFixed(3)})`;
+					ctx.fillStyle = fabricGrad;
 					ctx.beginPath();
-					ctx.moveTo(left.xPos, left.rootY);
-					ctx.lineTo(right.xPos, right.rootY);
-					ctx.lineTo(right.xPos, right.rootY - bandHeight);
-					ctx.lineTo(left.xPos, left.rootY - bandHeight);
+					ctx.moveTo(raySegments[0].xPos, raySegments[0].rootY);
+					for (let i = 1; i < raySegments.length; i++) {
+						const prev = raySegments[i - 1];
+						const curr = raySegments[i];
+						const controlX = (prev.xPos + curr.xPos) / 2;
+						const controlY = (prev.rootY + curr.rootY) / 2;
+						ctx.quadraticCurveTo(prev.xPos, prev.rootY, controlX, controlY);
+					}
+					const last = raySegments[raySegments.length - 1];
+					ctx.lineTo(last.xPos, last.rootY);
+					ctx.lineTo(last.xPos, last.topY);
+					for (let i = raySegments.length - 2; i >= 0; i--) {
+						const next = raySegments[i + 1];
+						const curr = raySegments[i];
+						const controlX = (next.xPos + curr.xPos) / 2;
+						const controlY = (next.topY + curr.topY) / 2;
+						ctx.quadraticCurveTo(next.xPos, next.topY, controlX, controlY);
+					}
+					ctx.lineTo(raySegments[0].xPos, raySegments[0].topY);
 					ctx.closePath();
 					ctx.fill();
+					ctx.shadowBlur = 0;
 				}
 
 				raySegments.forEach(({ ray, op, xPos, rootY, rayH }) => {

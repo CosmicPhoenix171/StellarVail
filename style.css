@@ -78,38 +78,38 @@ body {
     background-image:
         radial-gradient(circle at 20% 30%, white 2px, transparent 4px),
         radial-gradient(circle at 75% 55%, white 1.5px, transparent 3px),
-        radial-gradient(circle at 40% 80%, rgba(189,0,255,1) 1px, transparent 3px),
-        radial-gradient(circle at 60% 15%, rgba(0,243,255,1) 2px, transparent 5px),
+        radial-gradient(circle at 40% 80%, rgba(160,0,255,1) 1px, transparent 3px),
+        radial-gradient(circle at 60% 15%, rgba(0,190,255,1) 2px, transparent 5px),
         radial-gradient(circle at 10% 10%, white 1px, transparent 3px),
         radial-gradient(circle at 90% 90%, white 1.5px, transparent 4px),
         radial-gradient(circle at 30% 60%, white 1px, transparent 2px),
         radial-gradient(circle at 80% 20%, white 1.5px, transparent 3px),
         radial-gradient(circle at 15% 45%, white 1px, transparent 2px),
         radial-gradient(circle at 55% 25%, white 1.5px, transparent 3px),
-        radial-gradient(circle at 35% 75%, rgba(0,243,255,0.8) 1.5px, transparent 4px),
+        radial-gradient(circle at 35% 75%, rgba(0,190,255,0.8) 1.5px, transparent 4px),
         radial-gradient(circle at 85% 35%, white 1px, transparent 2px),
         radial-gradient(circle at 5% 95%, white 2px, transparent 4px),
         radial-gradient(circle at 95% 5%, white 1px, transparent 3px),
         radial-gradient(circle at 45% 50%, white 1px, transparent 2px),
-        radial-gradient(circle at 65% 85%, rgba(189,0,255,0.8) 1.5px, transparent 4px),
+        radial-gradient(circle at 65% 85%, rgba(160,0,255,0.8) 1.5px, transparent 4px),
         radial-gradient(circle at 25% 15%, white 1px, transparent 2px),
         radial-gradient(circle at 70% 40%, white 1.5px, transparent 3px),
         radial-gradient(circle at 12% 65%, white 1px, transparent 2px),
         radial-gradient(circle at 88% 75%, white 1px, transparent 2px),
         radial-gradient(circle at 22% 72%, white 1px, transparent 3px),
-        radial-gradient(circle at 78% 62%, rgba(189,0,255,0.8) 1.4px, transparent 4px),
+        radial-gradient(circle at 78% 62%, rgba(160,0,255,0.8) 1.4px, transparent 4px),
         radial-gradient(circle at 32% 18%, white 1.2px, transparent 3px),
         radial-gradient(circle at 68% 12%, white 1px, transparent 3px),
-        radial-gradient(circle at 12% 32%, rgba(0,243,255,0.8) 1.4px, transparent 4px),
+        radial-gradient(circle at 12% 32%, rgba(0,190,255,0.8) 1.4px, transparent 4px),
         radial-gradient(circle at 92% 42%, white 1px, transparent 2px),
         radial-gradient(circle at 44% 12%, white 1px, transparent 3px),
         radial-gradient(circle at 58% 72%, white 1.4px, transparent 4px),
         radial-gradient(circle at 72% 88%, white 1px, transparent 3px),
-        radial-gradient(circle at 18% 88%, rgba(0,243,255,0.7) 1.5px, transparent 4px),
+        radial-gradient(circle at 18% 88%, rgba(0,190,255,0.7) 1.5px, transparent 4px),
         radial-gradient(circle at 8% 52%, white 1px, transparent 2px),
         radial-gradient(circle at 50% 22%, white 1.1px, transparent 3px),
         radial-gradient(circle at 38% 42%, white 1px, transparent 2px),
-        radial-gradient(circle at 62% 52%, rgba(189,0,255,0.7) 1.3px, transparent 4px);
+        radial-gradient(circle at 62% 52%, rgba(160,0,255,0.7) 1.3px, transparent 4px);
     opacity: calc(0.3 + (var(--star-boost, 0) * 0.7));
     z-index: 1;
     mix-blend-mode: screen;
@@ -125,32 +125,32 @@ body {
         radial-gradient(circle at 50% 50%, white 1px, transparent 3px),
         radial-gradient(circle at 15% 85%, white 1.5px, transparent 4px),
         radial-gradient(circle at 85% 15%, white 1px, transparent 3px),
-        radial-gradient(circle at 30% 20%, rgba(255,0,255,1) 1.5px, transparent 4px),
-        radial-gradient(circle at 70% 80%, rgba(0,255,255,1) 1.5px, transparent 4px),
+        radial-gradient(circle at 30% 20%, rgba(220,60,200,1) 1.5px, transparent 4px),
+        radial-gradient(circle at 70% 80%, rgba(0,210,230,1) 1.5px, transparent 4px),
         radial-gradient(circle at 5% 40%, white 1px, transparent 2px),
         radial-gradient(circle at 95% 60%, white 1.5px, transparent 3px),
         radial-gradient(circle at 25% 35%, white 1px, transparent 2px),
         radial-gradient(circle at 65% 10%, white 1.5px, transparent 3px),
-        radial-gradient(circle at 40% 90%, rgba(0,243,255,0.8) 1px, transparent 3px),
+        radial-gradient(circle at 40% 90%, rgba(0,190,255,0.8) 1px, transparent 3px),
         radial-gradient(circle at 10% 55%, white 1px, transparent 2px),
         radial-gradient(circle at 90% 25%, white 1.5px, transparent 3px),
         radial-gradient(circle at 60% 65%, white 1px, transparent 2px),
-        radial-gradient(circle at 35% 5%, rgba(189,0,255,0.8) 1.5px, transparent 4px),
+        radial-gradient(circle at 35% 5%, rgba(160,0,255,0.8) 1.5px, transparent 4px),
         radial-gradient(circle at 80% 95%, white 1px, transparent 2px),
         radial-gradient(circle at 45% 15%, white 1px, transparent 2px),
         radial-gradient(circle at 20% 70%, white 1.5px, transparent 3px),
         radial-gradient(circle at 75% 30%, white 1px, transparent 2px),
         radial-gradient(circle at 55% 85%, white 1px, transparent 2px),
         radial-gradient(circle at 12% 22%, white 1px, transparent 2px),
-        radial-gradient(circle at 28% 82%, rgba(0,243,255,0.8) 1.2px, transparent 3px),
+        radial-gradient(circle at 28% 82%, rgba(0,190,255,0.8) 1.2px, transparent 3px),
         radial-gradient(circle at 82% 52%, white 1.2px, transparent 3px),
-        radial-gradient(circle at 48% 72%, rgba(189,0,255,0.8) 1.3px, transparent 4px),
+        radial-gradient(circle at 48% 72%, rgba(160,0,255,0.8) 1.3px, transparent 4px),
         radial-gradient(circle at 62% 32%, white 1px, transparent 2px),
         radial-gradient(circle at 8% 68%, white 1px, transparent 2px),
         radial-gradient(circle at 92% 12%, white 1.4px, transparent 3px),
         radial-gradient(circle at 36% 58%, white 1px, transparent 2px),
         radial-gradient(circle at 52% 8%, white 1px, transparent 2px),
-        radial-gradient(circle at 72% 48%, rgba(0,255,255,0.7) 1.5px, transparent 3px),
+        radial-gradient(circle at 72% 48%, rgba(0,210,230,0.7) 1.5px, transparent 3px),
         radial-gradient(circle at 18% 48%, white 1px, transparent 2px),
         radial-gradient(circle at 44% 32%, white 1px, transparent 2px),
         radial-gradient(circle at 58% 92%, white 1.1px, transparent 3px),
@@ -168,10 +168,10 @@ body {
 .aurora-star-variants {
     background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='%23ffffff' d='M30 2l4.5 20L58 30l-23.5 8 4.5 20L30 46 21 58l4.5-20L2 30l23.5-8L21 2l9 12z'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 60 60'%3E%3Cpath fill='%23d9b3ff' d='M30 4l4 14 14 4-14 4-4 14-4-14-14-4 14-4z'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 60 60'%3E%3Cpath fill='%2399f6ff' d='M30 6l3 10 10 3-10 3-3 10-3-10-10-3 10-3z'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 60 60'%3E%3Cpath fill='%23a000ff' d='M30 4l4 14 14 4-14 4-4 14-4-14-14-4 14-4z'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 60 60'%3E%3Cpath fill='%2300d2e6' d='M30 6l3 10 10 3-10 3-3 10-3-10-10-3 10-3z'/%3E%3C/svg%3E"),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 60 60'%3E%3Ccircle fill='%23ffffff' cx='30' cy='30' r='6'/%3E%3C/svg%3E"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 60 60'%3E%3Cpath fill='%23b6f3ff' d='M30 8l2.5 8 8 2.5-8 2.5-2.5 8-2.5-8-8-2.5 8-2.5z'/%3E%3C/svg%3E");
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 60 60'%3E%3Cpath fill='%2300beff' d='M30 8l2.5 8 8 2.5-8 2.5-2.5 8-2.5-8-8-2.5 8-2.5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-size: 80px 80px, 52px 52px, 34px 34px, 18px 18px, 20px 20px;
     background-position:
@@ -206,11 +206,11 @@ body {
 .wave-primary {
     background-image:
         linear-gradient(125deg,
-            rgba(189, 0, 255, 0) 0%,
-            rgba(189, 0, 255, 0.2) 24%,
-            rgba(255, 0, 255, 0.6) 44%,
-            rgba(0, 243, 255, 0.4) 65%,
-            rgba(8, 95, 158, 0) 100%),
+            rgba(160, 0, 255, 0) 0%,
+            rgba(160, 0, 255, 0.2) 24%,
+            rgba(220, 60, 200, 0.6) 44%,
+            rgba(0, 190, 255, 0.4) 65%,
+            rgba(40, 130, 255, 0) 100%),
         linear-gradient(90deg,
             rgba(0,0,0,0) 0%,
             rgba(0,0,0,0.4) 15%,
@@ -223,11 +223,11 @@ body {
 .wave-secondary {
     background-image:
         linear-gradient(135deg,
-            rgba(0, 243, 255, 0) 0%,
-            rgba(0, 243, 255, 0.25) 18%,
-            rgba(100, 0, 255, 0.6) 45%,
-            rgba(255, 0, 255, 0.3) 70%,
-            rgba(12, 97, 166, 0) 100%);
+            rgba(0, 190, 255, 0) 0%,
+            rgba(0, 190, 255, 0.25) 18%,
+            rgba(100, 80, 255, 0.6) 45%,
+            rgba(220, 60, 200, 0.3) 70%,
+            rgba(40, 130, 255, 0) 100%);
     animation: auroraCurtainAlt 32s ease-in-out infinite;
 }
 
@@ -235,11 +235,11 @@ body {
     filter: blur(90px) saturate(200%);
     background-image:
         linear-gradient(115deg,
-            rgba(100, 0, 255, 0) 0%,
-            rgba(189, 0, 255, 0.4) 35%,
-            rgba(0, 243, 255, 0.6) 58%,
-            rgba(255, 0, 255, 0.3) 82%,
-            rgba(11, 91, 160, 0) 100%);
+            rgba(100, 80, 255, 0) 0%,
+            rgba(160, 0, 255, 0.4) 35%,
+            rgba(0, 210, 230, 0.6) 58%,
+            rgba(220, 60, 200, 0.3) 82%,
+            rgba(40, 130, 255, 0) 100%);
     animation: auroraPulse 20s ease-in-out infinite;
     opacity: 0.5;
     transform: translateZ(0);
