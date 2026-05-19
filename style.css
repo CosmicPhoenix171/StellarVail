@@ -1416,6 +1416,54 @@ body.aurora-disabled .play-button.version-new:hover {
     display: none;
 }
 
+.summary-rating.insufficient-ratings {
+    display: none;
+}
+
+.summary-rating.unrated-placeholder {
+    display: flex;
+}
+
+.summary-rating.unrated-placeholder .summary-star {
+    color: rgba(0, 0, 0, 0.72);
+}
+
+.summary-rating.user-placeholder {
+    display: flex;
+}
+
+.summary-rating.user-placeholder .summary-star {
+    color: rgba(0, 0, 0, 0.72);
+}
+
+.summary-rating.unrated-placeholder .avg-rating {
+    color: rgba(255, 255, 255, 0.5);
+    text-shadow: none;
+}
+
+.summary-rating.user-placeholder .avg-rating {
+    color: rgba(255, 255, 255, 0.5);
+    text-shadow: none;
+}
+
+.summary-rating.unrated-placeholder .summary-user-rating,
+.summary-rating.unrated-placeholder .rating-count {
+    display: none;
+}
+
+.summary-rating.user-placeholder .summary-user-rating,
+.summary-rating.user-placeholder .rating-count {
+    display: none;
+}
+
+.summary-rating.rating-hidden.unrated-placeholder .avg-rating {
+    display: inline;
+}
+
+.summary-rating.rating-hidden.user-placeholder .avg-rating {
+    display: inline;
+}
+
 .avg-rating {
     font-size: 1.05em;
     font-weight: 700;

@@ -20,6 +20,7 @@ let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
 let pendingRating = null; // { songId, rating } stored when a guest tries to rate
+let playbackAnalytics = null;
 // Usernames that get admin powers (all ratings visible, listen count not incremented)
 const ADMIN_USERNAMES = ['Phoenix'];
 
@@ -133,6 +134,7 @@ let currentSongRated = false;
 
 // Autoplay next track when one finishes (if enabled, and if rated or admin)
 audioPlayer.addEventListener('ended', () => {
+	savePlaybackAnalytics('ended', true);
 	if (!autoplayQueueEnabled) {
 		if (!isAdminMode && !currentSongRated) {
 			showRatingPopup();
@@ -149,9 +151,15 @@ audioPlayer.addEventListener('ended', () => {
 
 // Detect if user skips forward (seeking ahead invalidates listen credit)
 audioPlayer.addEventListener('seeking', () => {
+	if (playbackAnalytics && playbackAnalytics.songId === currentSongId) {
+		playbackAnalytics.seekCount += 1;
+	}
 	// If seeking forward by more than 2 seconds, invalidate the listen
 	if (audioPlayer.currentTime > lastPlaybackTime + 2) {
 		listenInvalidated = true;
+		if (playbackAnalytics && playbackAnalytics.songId === currentSongId) {
+			playbackAnalytics.forwardSkipCount += 1;
+		}
 	}
 });
 
@@ -159,6 +167,7 @@ audioPlayer.addEventListener('seeking', () => {
 audioPlayer.addEventListener('timeupdate', () => {
 	// Update last known position for skip detection
 	lastPlaybackTime = audioPlayer.currentTime;
+	updatePlaybackAnalyticsSnapshot();
 	
 	if (!currentSongId || listenCredited === true || listenInvalidated === true) return;
 
@@ -174,6 +183,7 @@ audioPlayer.addEventListener('timeupdate', () => {
 
 // Reactively brighten stars based on playback loudness
 audioPlayer.addEventListener('play', async () => {
+	ensurePlaybackAnalytics(currentSongId);
 	try {
 		await ensureAudioAnalyser();
 		startStarBoost();
@@ -191,6 +201,11 @@ audioPlayer.addEventListener('play', async () => {
 
 audioPlayer.addEventListener('pause', () => {
 	stopStarBoost();
+	if (!audioPlayer.ended && playbackAnalytics && playbackAnalytics.songId === currentSongId) {
+		playbackAnalytics.pauseCount += 1;
+		playbackAnalytics.wasPaused = true;
+		savePlaybackAnalytics('pause');
+	}
 	// Update play button to show Resume
 	if (currentSongId) {
 		const { song, vi } = resolveSongAndVersion(currentSongId) || {};
@@ -201,6 +216,8 @@ audioPlayer.addEventListener('pause', () => {
 });
 
 audioPlayer.addEventListener('ended', stopStarBoost);
+window.addEventListener('beforeunload', () => savePlaybackAnalytics('page-exit', true));
+window.addEventListener('pagehide', () => savePlaybackAnalytics('page-exit', true));
 
 // ===== SONG SORTING =====
 let currentSortMode = null; // 'rating', 'date', 'listens', 'comments', 'title'
@@ -632,12 +649,16 @@ function selectVersion(songBaseId, index) {
 		? song.versions.some((_, i) => versionId(song, i) === currentSongId)
 		: currentSongId === song.id;
 	if (isPlayingThisSong) {
+		const nextVersionId = versionId(song, index);
+		if (currentSongId !== nextVersionId) {
+			savePlaybackAnalytics('switch-version', true);
+		}
 		const filename = versionFilename(song, index);
 		const folder = song.folder || song.filename.replace(/\.wav$/i, '');
 		const wasPaused = audioPlayer.paused;
 		audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 		if (!wasPaused) audioPlayer.play().catch(() => {});
-		currentSongId = versionId(song, index);
+		currentSongId = nextVersionId;
 
 		// Move the playing icon to the newly-selected tab
 		document.querySelectorAll('.version-tab').forEach(t => t.classList.remove('tab-playing'));
@@ -672,6 +693,7 @@ function loadSongToPlayer(songBaseId, versionIndex) {
 	const vid = versionId(song, vi);
 
 	if (currentSongId === vid) return;
+	if (currentSongId && currentSongId !== vid) savePlaybackAnalytics('switch-track', true);
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
@@ -734,6 +756,7 @@ function playSong(songBaseId, versionIndex) {
 
 	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
 	const vid = versionId(song, vi);
+	if (currentSongId && currentSongId !== vid) savePlaybackAnalytics('switch-track', true);
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
@@ -937,6 +960,164 @@ function toggleLoopSong() {
 	syncLoopSongButton();
 }
 
+function ensureSongStatsEntry(songId) {
+	if (!songStats[songId]) {
+		songStats[songId] = { rating: 0, listens: 0, versionRatings: {} };
+	} else if (!songStats[songId].versionRatings) {
+		songStats[songId].versionRatings = {};
+	}
+	return songStats[songId];
+}
+
+function roundAnalyticsValue(value, digits = 2) {
+	const factor = 10 ** digits;
+	return Math.round((value || 0) * factor) / factor;
+}
+
+function createPlaybackAnalyticsSession(songId) {
+	const resolved = resolveSongAndVersion(songId);
+	return {
+		sessionId: `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+		songId,
+		baseSongId: resolved?.song?.id || songId,
+		versionIndex: resolved?.vi ?? 0,
+		clientId,
+		displayName: getDisplayName(),
+		username: localStorage.getItem('sv_username') || null,
+		startedAt: Date.now(),
+		updatedAt: Date.now(),
+		endedAt: null,
+		lastPositionSeconds: 0,
+		maxPositionSeconds: 0,
+		durationSeconds: 0,
+		pauseCount: 0,
+		resumeCount: 0,
+		seekCount: 0,
+		forwardSkipCount: 0,
+		stopReason: null,
+		listenCredited: false,
+		listenInvalidated: false,
+		completed: false,
+		wasPaused: false,
+		aggregateSaved: false,
+	};
+}
+
+function ensurePlaybackAnalytics(songId) {
+	if (!songId || typeof database === 'undefined' || isAdminMode) return null;
+	if (!playbackAnalytics || playbackAnalytics.songId !== songId) {
+		if (playbackAnalytics && playbackAnalytics.songId !== songId) {
+			savePlaybackAnalytics('switch-track', true);
+		}
+		playbackAnalytics = createPlaybackAnalyticsSession(songId);
+		return playbackAnalytics;
+	}
+	if (playbackAnalytics.wasPaused) {
+		playbackAnalytics.resumeCount += 1;
+		playbackAnalytics.wasPaused = false;
+	}
+	playbackAnalytics.displayName = getDisplayName();
+	playbackAnalytics.username = localStorage.getItem('sv_username') || null;
+	return playbackAnalytics;
+}
+
+function updatePlaybackAnalyticsSnapshot() {
+	if (!playbackAnalytics) return null;
+	const currentTime = Number.isFinite(audioPlayer?.currentTime) ? audioPlayer.currentTime : 0;
+	const duration = Number.isFinite(audioPlayer?.duration) ? audioPlayer.duration : 0;
+	playbackAnalytics.updatedAt = Date.now();
+	playbackAnalytics.lastPositionSeconds = roundAnalyticsValue(currentTime);
+	playbackAnalytics.maxPositionSeconds = Math.max(
+		playbackAnalytics.maxPositionSeconds,
+		playbackAnalytics.lastPositionSeconds
+	);
+	playbackAnalytics.durationSeconds = roundAnalyticsValue(duration);
+	playbackAnalytics.listenCredited = listenCredited;
+	playbackAnalytics.listenInvalidated = listenInvalidated;
+	playbackAnalytics.completed = duration > 0 && playbackAnalytics.maxPositionSeconds >= duration * 0.98;
+	return playbackAnalytics;
+}
+
+function savePlaybackAnalytics(reason = 'progress', finalize = false) {
+	if (!playbackAnalytics || typeof database === 'undefined' || isAdminMode) return;
+	const session = updatePlaybackAnalyticsSnapshot();
+	if (!session) return;
+
+	if (finalize) {
+		session.endedAt = Date.now();
+		session.stopReason = reason;
+	} else if (!session.stopReason || reason === 'pause') {
+		session.stopReason = reason;
+	}
+
+	const maxProgressPercent = session.durationSeconds > 0
+		? roundAnalyticsValue((session.maxPositionSeconds / session.durationSeconds) * 100, 1)
+		: 0;
+
+	const payload = {
+		sessionId: session.sessionId,
+		clientId: session.clientId,
+		displayName: session.displayName,
+		username: session.username,
+		baseSongId: session.baseSongId,
+		versionIndex: session.versionIndex,
+		startedAt: session.startedAt,
+		updatedAt: session.updatedAt,
+		endedAt: session.endedAt,
+		stopReason: session.stopReason,
+		lastPositionSeconds: session.lastPositionSeconds,
+		maxPositionSeconds: session.maxPositionSeconds,
+		durationSeconds: session.durationSeconds,
+		maxProgressPercent,
+		pauseCount: session.pauseCount,
+		resumeCount: session.resumeCount,
+		seekCount: session.seekCount,
+		forwardSkipCount: session.forwardSkipCount,
+		listenCredited: session.listenCredited,
+		listenInvalidated: session.listenInvalidated,
+		completed: session.completed,
+		finalized: finalize,
+	};
+
+	database.ref(`songs/${session.songId}/analytics/sessions/${session.sessionId}`).set(payload);
+
+	if (finalize && !session.aggregateSaved) {
+		session.aggregateSaved = true;
+		database.ref(`songs/${session.songId}/analytics/byUser/${session.clientId}`).transaction((current) => {
+			const next = current || {
+				clientId: session.clientId,
+				listenSessions: 0,
+				completedSessions: 0,
+				totalPlaySeconds: 0,
+				totalPauseCount: 0,
+				totalSeekCount: 0,
+				forwardSkipCount: 0,
+				lastStopPositionSeconds: 0,
+				maxProgressPercent: 0,
+				lastListenedAt: 0,
+			};
+			next.clientId = session.clientId;
+			next.displayName = session.displayName;
+			next.username = session.username;
+			next.baseSongId = session.baseSongId;
+			next.listenSessions = (next.listenSessions || 0) + 1;
+			next.completedSessions = (next.completedSessions || 0) + (payload.completed ? 1 : 0);
+			next.totalPlaySeconds = roundAnalyticsValue((next.totalPlaySeconds || 0) + payload.maxPositionSeconds);
+			next.totalPauseCount = (next.totalPauseCount || 0) + payload.pauseCount;
+			next.totalSeekCount = (next.totalSeekCount || 0) + payload.seekCount;
+			next.forwardSkipCount = (next.forwardSkipCount || 0) + payload.forwardSkipCount;
+			next.lastStopPositionSeconds = payload.lastPositionSeconds;
+			next.maxProgressPercent = Math.max(next.maxProgressPercent || 0, payload.maxProgressPercent);
+			next.lastListenedAt = payload.endedAt || Date.now();
+			return next;
+		});
+	}
+
+	if (finalize) {
+		playbackAnalytics = null;
+	}
+}
+
 // ===== LISTEN COUNT =====
 function loadListenCount(songId) {
 	if (typeof database === 'undefined') return;
@@ -954,12 +1135,12 @@ function loadListenCount(songId) {
 			s.id === songId || (s.versions && s.versions.some((_, i) => versionId(s, i) === songId))
 		);
 		const statKey = baseSong ? baseSong.id : songId;
-		if (!songStats[statKey]) songStats[statKey] = { rating: 0, listens: 0 };
-		songStats[statKey].listens = (songStats[statKey].listens || 0) + count;
+		const statsEntry = ensureSongStatsEntry(statKey);
+		statsEntry.listens = (statsEntry.listens || 0) + count;
 		// Update art overlay listen count with running total
 		const artListenEl = document.getElementById(`art-listen-${statKey}`);
 		if (artListenEl) {
-			const total = songStats[statKey].listens;
+			const total = statsEntry.listens;
 			artListenEl.textContent = `${total} listen${total === 1 ? '' : 's'}`;
 		}
 		debouncedSortSongs();
@@ -1103,16 +1284,29 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		}
 
 		const average = count > 0 ? (sum / count).toFixed(1) : '0.0';
+		const hasVisibleCommunityRating = count >= 2;
+		const hasUnratedPlaceholder = count === 0;
 		const avgElement = document.getElementById(`avg-rating-${songId}`);
 		const countElement = document.getElementById(`rating-count-${songId}`);
+		const summaryElement = document.getElementById(`summary-rating-${songId}`);
 		const pendingHint = guestCount > 0 ? ` · ${guestCount} pending` : '';
-		if (avgElement) avgElement.textContent = `Avg ${average}★`;
+		const currentUserHasRated = !!ratings?.[clientId]?.rating;
+		const showUserPlaceholder = !currentUserHasRated && !hasVisibleCommunityRating;
+		if (summaryElement) {
+			summaryElement.classList.toggle('insufficient-ratings', !hasVisibleCommunityRating && !showUserPlaceholder && !hasUnratedPlaceholder);
+			summaryElement.classList.toggle('unrated-placeholder', hasUnratedPlaceholder);
+			summaryElement.classList.toggle('user-placeholder', showUserPlaceholder);
+		}
+		if (avgElement) {
+			avgElement.textContent = hasUnratedPlaceholder || showUserPlaceholder ? 'Avg -.-' : `Avg ${average}★`;
+			avgElement.style.display = hasVisibleCommunityRating || hasUnratedPlaceholder || showUserPlaceholder ? '' : 'none';
+		}
 		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'}${isAdminMode ? pendingHint : ''})`;
 
 		// Sync art overlay rating chip (base song, first version only)
 		const artRatingEl = document.getElementById(`art-rating-${songBaseId}`);
 		if (artRatingEl && versionIndex === 0) {
-			if (count > 0) {
+			if (hasVisibleCommunityRating) {
 				artRatingEl.textContent = `★ ${average}`;
 				artRatingEl.style.display = '';
 			} else {
@@ -1153,12 +1347,11 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 			}
 		}
 		
-		// Track for sorting — aggregate across all versions for card-level sort
-		if (!songStats[statKey]) songStats[statKey] = { rating: 0, listens: 0 };
-		// For multi-version songs, use the highest-rated version for sorting
-		if (parseFloat(average) > (songStats[statKey].rating || 0)) {
-			songStats[statKey].rating = parseFloat(average);
-		}
+		// Track for sorting — aggregate across all versions for card-level sort.
+		// Only community ratings with at least two votes count toward rating sort order.
+		const statsEntry = ensureSongStatsEntry(statKey);
+		statsEntry.versionRatings[songId] = hasVisibleCommunityRating ? parseFloat(average) : 0;
+		statsEntry.rating = Math.max(0, ...Object.values(statsEntry.versionRatings));
 		debouncedSortSongs();
 	});
 }
@@ -1195,6 +1388,7 @@ function revealRating(songId) {
 	const ratingEl = document.getElementById(`summary-rating-${songId}`);
 	if (ratingEl) {
 		ratingEl.classList.remove('rating-hidden');
+		ratingEl.classList.remove('user-placeholder');
 		// Now that the user has rated, fill stars with the community average
 		const avgEl = document.getElementById(`avg-rating-${songId}`);
 		if (avgEl) updateStarsDisplay(songId, parseFloat(avgEl.textContent.replace(/[^\d.]/g, '')) || 0);
