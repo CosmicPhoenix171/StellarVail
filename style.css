@@ -28,6 +28,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 html, body {
     height: 100%;
 }
@@ -2287,11 +2291,16 @@ body.aurora-disabled .play-button.version-new:hover {
     z-index: 1;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
     .app-shell {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto;
         height: auto;
+    }
+
+    .content-column {
+        grid-column: 1;
+        grid-row: 1;
     }
 
     html, body { height: auto; overflow: auto; }
@@ -2311,6 +2320,8 @@ body.aurora-disabled .play-button.version-new:hover {
     }
 
     .now-playing-side-panel {
+        grid-column: 1;
+        grid-row: 2;
         width: 100%;
         max-width: none;
         min-width: 0;
@@ -2666,4 +2677,285 @@ body.low-perf-mode .song-card:hover {
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-main);
+}
+
+/* ===== ADMIN ANALYTICS ===== */
+.admin-mode-switch {
+    color: var(--accent);
+    border-color: rgba(0, 243, 255, 0.45);
+    background: rgba(0, 243, 255, 0.12);
+}
+
+body.admin-page {
+    min-height: 100%;
+    overflow: auto;
+    background: #05010a;
+}
+
+.admin-shell {
+    width: min(1440px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 24px 0 48px;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(6, 2, 14, 0.72);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.admin-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.admin-mode-btn {
+    border: 1px solid rgba(0, 243, 255, 0.45);
+    background: rgba(0, 243, 255, 0.12);
+    color: var(--text-main);
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.admin-mode-btn:hover {
+    background: rgba(0, 243, 255, 0.22);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.admin-locked,
+.admin-dashboard {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(8, 3, 18, 0.68);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    padding: 18px;
+}
+
+.admin-locked {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+}
+
+.admin-locked h2,
+.admin-section-heading h2 {
+    font-size: 1.15rem;
+    letter-spacing: 0;
+}
+
+.admin-locked p,
+.admin-section-heading span,
+.admin-song-card-head p,
+.admin-song-card-head span,
+.admin-empty,
+.admin-empty-state {
+    color: var(--text-muted);
+}
+
+.admin-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.admin-metric {
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.admin-metric span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+.admin-metric strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 1.05rem;
+    color: var(--text-main);
+    overflow-wrap: anywhere;
+}
+
+.admin-section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.admin-song-list {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-song-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.32);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.admin-song-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.admin-song-card-head h3 {
+    font-size: 1rem;
+    letter-spacing: 0;
+}
+
+.admin-song-card-head p,
+.admin-song-card-head span {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.admin-version-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.admin-version-tab {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.admin-version-tab:hover,
+.admin-version-tab.active {
+    border-color: var(--accent);
+    background: rgba(0, 243, 255, 0.12);
+    color: var(--text-main);
+}
+
+.admin-version-panel {
+    display: block;
+}
+
+.admin-version-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.admin-version-meta > div {
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 9px 10px;
+    min-width: 0;
+}
+
+.admin-version-meta strong,
+.admin-version-meta span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.admin-version-meta strong {
+    color: var(--text-main);
+    font-size: 0.8rem;
+}
+
+.admin-version-meta span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: 4px;
+}
+
+.admin-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 8px;
+}
+
+.admin-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.admin-detail-grid > div {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-detail-grid h4 {
+    font-size: 0.76rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.admin-detail-grid span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.admin-empty-state {
+    padding: 22px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .admin-header,
+    .admin-section-heading,
+    .admin-song-card-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-actions {
+        justify-content: flex-start;
+    }
+
+    .admin-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-version-meta {
+        grid-template-columns: 1fr;
+    }
 }
