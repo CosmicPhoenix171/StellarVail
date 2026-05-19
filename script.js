@@ -2,6 +2,8 @@
 let currentSongId = null;
 let songsData = [];
 let shuffleMode = false;
+let autoplayQueueEnabled = localStorage.getItem('sv_autoplay_queue') !== '0';
+let loopSongEnabled = localStorage.getItem('sv_loop_song') === '1';
 let activeCardElement = null;
 let selectedCardElement = null;
 let selectedSongId = null;
@@ -13,6 +15,7 @@ let audioCtx = null;
 let analyser = null;
 let dataArray = null;
 let starBoostRaf = null;
+let auroraDisabled = localStorage.getItem('sv_disable_aurora') === '1';
 let clientId = getClientId();
 let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
@@ -37,9 +40,14 @@ const heardVersions = new Set(JSON.parse(localStorage.getItem('sv_heard_v') || '
 // Tracks selected version index per song card: { [songBaseId]: index }
 const selectedVersions = {};
 
+function defaultVersionIndex(song) {
+	if (!song?.versions?.length) return 0;
+	return song.versions.length - 1;
+}
+
 // Returns the Firebase ID for a given song + version index
 function versionId(song, versionIndex) {
-	const vi = versionIndex ?? (selectedVersions[song.id] ?? 0);
+	const vi = versionIndex ?? (selectedVersions[song.id] ?? defaultVersionIndex(song));
 	if (!song.versions || song.versions.length <= 1 || vi === 0) return song.id;
 	const label = song.versions[vi].label.toLowerCase().replace(/[^a-z0-9]/g, '');
 	return `${song.id}-${label}`;
@@ -47,7 +55,7 @@ function versionId(song, versionIndex) {
 
 // Returns the audio filename for a given song + version index
 function versionFilename(song, versionIndex) {
-	const vi = versionIndex ?? (selectedVersions[song.id] ?? 0);
+	const vi = versionIndex ?? (selectedVersions[song.id] ?? defaultVersionIndex(song));
 	if (song.versions && song.versions[vi]) return song.versions[vi].filename;
 	return song.filename;
 }
@@ -64,9 +72,20 @@ function formatDate(dateString) {
 const audioPlayer = document.getElementById('audio-player');
 const songsContainer = document.getElementById('songs-container');
 const playerBar = document.querySelector('.player-bar');
+if (audioPlayer) {
+	audioPlayer.loop = loopSongEnabled;
+}
 
 // ===== HIDE UI MODE =====
 let uiHidden = false;
+
+function disableAuroraEffects() {
+	if (!auroraDisabled) {
+		auroraDisabled = true;
+		localStorage.setItem('sv_disable_aurora', '1');
+	}
+	document.body.classList.add('aurora-disabled');
+}
 
 function toggleHideUI() {
 	uiHidden = !uiHidden;
@@ -112,8 +131,15 @@ document.addEventListener('keydown', (event) => {
 // Track if current song has been rated this session
 let currentSongRated = false;
 
-// Autoplay next track when one finishes (if rated, or if admin)
+// Autoplay next track when one finishes (if enabled, and if rated or admin)
 audioPlayer.addEventListener('ended', () => {
+	if (!autoplayQueueEnabled) {
+		if (!isAdminMode && !currentSongRated) {
+			showRatingPopup();
+		}
+		return;
+	}
+
 	if (isAdminMode || currentSongRated) {
 		playNextSong();
 	} else {
@@ -177,7 +203,7 @@ audioPlayer.addEventListener('pause', () => {
 audioPlayer.addEventListener('ended', stopStarBoost);
 
 // ===== SONG SORTING =====
-let currentSortMode = 'date'; // 'rating', 'date', 'listens', 'comments', 'title'
+let currentSortMode = null; // 'rating', 'date', 'listens', 'comments', 'title'
 let currentSortDir = 'desc'; // 'asc' or 'desc'
 let filterUnrated = false; // show only songs user hasn't rated yet
 
@@ -417,7 +443,7 @@ function renderSongs() {
 	songsContainer.innerHTML = '';
 
 	songsData.forEach((song) => {
-		selectedVersions[song.id] = 0; // default to first version
+		selectedVersions[song.id] = defaultVersionIndex(song);
 		const songCard = createSongCard(song);
 		songsContainer.appendChild(songCard);
 
@@ -471,13 +497,14 @@ function createSongCard(song) {
 	// Build version tabs HTML — always shown; single-version songs get an "Original" tab
 	const hasVersions = song.versions && song.versions.length > 1;
 	const tabVersions = song.versions || [{ filename: song.filename, label: 'Original' }];
+	const defaultIndex = defaultVersionIndex(song);
 	const versionTabsHtml = `
 		<div class="version-tabs" id="version-tabs-${song.id}">
 			${tabVersions.map((v, i) => {
 				const vid = versionId(song, i);
 				const isUnheard = !heardVersions.has(vid) && !isAdminMode;
 				return `
-				<button class="version-tab${i === 0 ? ' active' : ''}${isUnheard ? ' version-new' : ''}"
+				<button class="version-tab${i === defaultIndex ? ' active' : ''}${isUnheard ? ' version-new' : ''}"
 					data-song-id="${song.id}"
 					data-version-index="${i}"
 					data-tab="true"
@@ -494,7 +521,7 @@ function createSongCard(song) {
 		const vDate = v.dateAdded ? formatDate(v.dateAdded) : (dateAdded || 'Unknown date');
 		const vDateHtml = `<span class="date-added">${vDate}</span>`;
 		return `
-		<div class="version-panel${i === 0 ? ' active' : ''}" id="version-panel-${song.id}-${i}">
+		<div class="version-panel${i === defaultIndex ? ' active' : ''}" id="version-panel-${song.id}-${i}">
 			<div class="card-meta-row">
 				${vDateHtml}
 				<div class="summary-rating ${ratingHiddenClass}" id="summary-rating-${vid}">
@@ -519,7 +546,7 @@ function createSongCard(song) {
 				</button>
 			</div>
 			<div class="detail-section" id="detail-section-${vid}">
-				${i === 0 ? detailHeaderHtml : ''}
+				${i === defaultIndex ? detailHeaderHtml : ''}
 				${isAdminMode ? '' : `<div class="rating-section">
 					<h4 class="np-section-heading">⭐ Ratings</h4>
 					<div class="rating-stars" id="rating-stars-${vid}">
@@ -626,7 +653,7 @@ function selectVersion(songBaseId, index) {
 function resolveSongAndVersion(songIdOrVersionId) {
 	// Try exact base id match first
 	let song = songsData.find(s => s.id === songIdOrVersionId);
-	if (song) return { song, vi: selectedVersions[song.id] ?? 0 };
+	if (song) return { song, vi: selectedVersions[song.id] ?? defaultVersionIndex(song) };
 	// Try matching as a version id: {baseId}-{label}
 	song = songsData.find(s => s.versions && s.versions.some((_, i) => versionId(s, i) === songIdOrVersionId));
 	if (song) {
@@ -641,7 +668,7 @@ function loadSongToPlayer(songBaseId, versionIndex) {
 	const song = songsData.find(s => s.id === songBaseId);
 	if (!song) return;
 
-	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
 	const vid = versionId(song, vi);
 
 	if (currentSongId === vid) return;
@@ -676,7 +703,7 @@ function loadSongToPlayer(songBaseId, versionIndex) {
 function togglePlaySong(songBaseId, versionIndex) {
 	const song = songsData.find(s => s.id === songBaseId);
 	if (!song) return;
-	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
 	const vid = versionId(song, vi);
 
 	if (currentSongId === vid) {
@@ -705,7 +732,7 @@ function playSong(songBaseId, versionIndex) {
 	const song = songsData.find(s => s.id === songBaseId);
 	if (!song) return;
 
-	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? 0);
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
 	const vid = versionId(song, vi);
 
 	if (playerBar) playerBar.classList.remove('hidden');
@@ -873,6 +900,41 @@ function toggleShuffle() {
 		shuffleBtn.classList.remove('active');
 	}
 	updateQueue();
+}
+
+function syncAutoplayQueueButton() {
+	const autoplayBtn = document.getElementById('autoplay-queue-btn');
+	if (!autoplayBtn) return;
+
+	autoplayBtn.title = autoplayQueueEnabled ? 'Queue Autoplay: ON' : 'Queue Autoplay: OFF';
+	autoplayBtn.setAttribute('aria-pressed', autoplayQueueEnabled ? 'true' : 'false');
+	autoplayBtn.classList.toggle('active', autoplayQueueEnabled);
+	autoplayBtn.textContent = autoplayQueueEnabled ? 'Q▶' : 'Q⏸';
+}
+
+function toggleAutoplayQueue() {
+	autoplayQueueEnabled = !autoplayQueueEnabled;
+	localStorage.setItem('sv_autoplay_queue', autoplayQueueEnabled ? '1' : '0');
+	syncAutoplayQueueButton();
+}
+
+function syncLoopSongButton() {
+	const loopBtn = document.getElementById('loop-song-btn');
+	if (!loopBtn) return;
+
+	loopBtn.title = loopSongEnabled ? 'Loop Song: ON' : 'Loop Song: OFF';
+	loopBtn.setAttribute('aria-pressed', loopSongEnabled ? 'true' : 'false');
+	loopBtn.classList.toggle('active', loopSongEnabled);
+	loopBtn.textContent = loopSongEnabled ? '🔁1' : '🔁';
+	if (audioPlayer) {
+		audioPlayer.loop = loopSongEnabled;
+	}
+}
+
+function toggleLoopSong() {
+	loopSongEnabled = !loopSongEnabled;
+	localStorage.setItem('sv_loop_song', loopSongEnabled ? '1' : '0');
+	syncLoopSongButton();
 }
 
 // ===== LISTEN COUNT =====
@@ -1937,6 +1999,8 @@ function handleLogout() {
 document.addEventListener('DOMContentLoaded', () => {
 	updateUserDisplay();
 	setSortMode('date'); // highlight default column header
+	syncAutoplayQueueButton();
+	syncLoopSongButton();
 
 	// Hide aurora hint when song list is scrolled to the end
 	const songsGrid = document.getElementById('songs-container');
@@ -1957,7 +2021,31 @@ document.addEventListener('DOMContentLoaded', () => {
 function initAuroraCanvas() {
 	const canvas = document.getElementById('aurora-canvas');
 	if (!canvas) return;
+	if (auroraDisabled) {
+		disableAuroraEffects();
+		return;
+	}
 	const ctx = canvas.getContext('2d');
+	if (!ctx) return;
+
+	const FPS_SAMPLE_SIZE = 45;
+	const FPS_THRESHOLD = 35;
+	const LOW_FPS_GRACE_MS = 1800;
+	const FRAME_DELTA_SPIKE_MS = 250;
+	let auroraFrameId = null;
+	let auroraStopped = false;
+	let lastFrameTime = 0;
+	let lowFpsSince = null;
+	const frameDeltas = [];
+
+	function stopAurora() {
+		if (auroraStopped) return;
+		auroraStopped = true;
+		if (auroraFrameId) cancelAnimationFrame(auroraFrameId);
+		ro.disconnect();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		disableAuroraEffects();
+	}
 
 	function resize() {
 		canvas.width = canvas.offsetWidth;
@@ -2036,7 +2124,37 @@ function initAuroraCanvas() {
 		};
 	});
 
-	function drawFrame() {
+	function drawFrame(timestamp) {
+		if (auroraStopped) return;
+		if (document.hidden) {
+			lastFrameTime = timestamp;
+			auroraFrameId = requestAnimationFrame(drawFrame);
+			return;
+		}
+
+		if (lastFrameTime) {
+			const delta = timestamp - lastFrameTime;
+			if (delta > 0 && delta < FRAME_DELTA_SPIKE_MS) {
+				frameDeltas.push(delta);
+				if (frameDeltas.length > FPS_SAMPLE_SIZE) frameDeltas.shift();
+
+				if (frameDeltas.length === FPS_SAMPLE_SIZE) {
+					const avgDelta = frameDeltas.reduce((sum, value) => sum + value, 0) / frameDeltas.length;
+					const avgFps = 1000 / avgDelta;
+					if (avgFps < FPS_THRESHOLD) {
+						lowFpsSince = lowFpsSince ?? timestamp;
+						if (timestamp - lowFpsSince >= LOW_FPS_GRACE_MS) {
+							stopAurora();
+							return;
+						}
+					} else {
+						lowFpsSince = null;
+					}
+				}
+			}
+		}
+		lastFrameTime = timestamp;
+
 		const w = canvas.width;
 		const h = canvas.height;
 		ctx.clearRect(0, 0, w, h);
@@ -2248,10 +2366,10 @@ function initAuroraCanvas() {
 			ctx.shadowBlur = 0;
 		});
 
-		requestAnimationFrame(drawFrame);
+		auroraFrameId = requestAnimationFrame(drawFrame);
 	}
 
-	drawFrame();
+	auroraFrameId = requestAnimationFrame(drawFrame);
 }
 
 // ===== PERFORMANCE MODE (always on) =====

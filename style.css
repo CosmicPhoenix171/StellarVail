@@ -366,6 +366,60 @@ body {
     opacity: 0;
 }
 
+body.aurora-disabled .aurora-sky {
+    transform: none;
+    filter: none;
+    transition: none;
+}
+
+body.aurora-disabled .aurora-canvas {
+    display: none;
+}
+
+body.aurora-disabled .aurora-noise {
+    display: none;
+}
+
+body.aurora-disabled .list-player-panel::before,
+body.aurora-disabled .list-player-panel::after {
+    opacity: 0;
+}
+
+body.aurora-disabled .song-card,
+body.aurora-disabled .song-card:hover,
+body.aurora-disabled .song-card.panel-selected,
+body.aurora-disabled .song-card.panel-selected:hover,
+body.aurora-disabled .song-card.in-now-playing,
+body.aurora-disabled .song-card.in-now-playing.panel-selected,
+body.aurora-disabled .song-card.top-rated,
+body.aurora-disabled .song-card.top-rated:hover,
+body.aurora-disabled .song-card.top-rated.in-now-playing,
+body.aurora-disabled .song-card.top-rated.panel-selected,
+body.aurora-disabled .song-card.top-rated.panel-selected:hover,
+body.aurora-disabled .now-playing-side-panel,
+body.aurora-disabled .now-playing-side-panel.show-playback-state .version-panel.active .play-button-wrap::after {
+    animation: none !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+body.aurora-disabled .song-card.is-new {
+    animation: none !important;
+}
+
+body.aurora-disabled .song-card.top-rated::before {
+    animation: none !important;
+    opacity: 0 !important;
+}
+
+body.aurora-disabled .play-button,
+body.aurora-disabled .play-button:hover,
+body.aurora-disabled .play-button.version-new,
+body.aurora-disabled .play-button.version-new:hover {
+    animation: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28) !important;
+    transform: none !important;
+}
+
 .list-player-panel.at-bottom::after {
     opacity: 0;
 }
@@ -2201,7 +2255,11 @@ body {
     }
 
     .songs-grid {
-        overflow: visible;
+        height: 60vh;
+        max-height: 60vh;
+        min-height: 320px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .now-playing-side-panel {
