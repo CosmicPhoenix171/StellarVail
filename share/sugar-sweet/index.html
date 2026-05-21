@@ -20,7 +20,7 @@
 	<script>
 	(function () {
 		const defaultTrackId = "sugar-sweet-v3mp3";
-		const versionTargets = {"v":"sugar-sweet-v3mp3-vhs"};
+		const versionTargets = {"vgr":"sugar-sweet-v3mp3-vgr","vhs":"sugar-sweet-v3mp3-vhs"};
 		const params = new URLSearchParams(window.location.search);
 		const versionSlug = (params.get('v') || '').trim().toLowerCase();
 		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;

@@ -85,11 +85,12 @@ function readExistingIndex() {
 	return readJsonFile(indexFile);
 }
 
-function normalizeShareSlug(value) {
-	return String(value || '')
-		.toLowerCase()
-		.trim()
-		.replace(/\.[a-z0-9]+$/i, '')
+function normalizeShareSlug(value, stripExtension = false) {
+	let normalizedValue = String(value || '').toLowerCase().trim();
+	if (stripExtension) {
+		normalizedValue = normalizedValue.replace(/\.[a-z0-9]+$/i, '');
+	}
+	return normalizedValue
 		.replace(/\s+/g, '-')
 		.replace(/[^a-z0-9-]/g, '')
 		.replace(/-+/g, '-')
@@ -157,7 +158,7 @@ function buildShareCardTitle(song) {
 }
 
 function buildSongSharePath(song) {
-	return normalizeShareSlug(song.shareSlug || song.title || song.folder || song.id);
+	return normalizeShareSlug(song.shareSlug || song.title || song.folder || song.id, true);
 }
 
 function buildVersionShareSlug(song, versionIndex) {

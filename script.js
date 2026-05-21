@@ -67,11 +67,12 @@ function getSharedTrackIdFromUrl() {
 	return params.get(SHARE_TRACK_QUERY_PARAM)?.trim() || '';
 }
 
-function normalizeShareSlug(value) {
-	return String(value || '')
-		.toLowerCase()
-		.trim()
-		.replace(/\.[a-z0-9]+$/i, '')
+function normalizeShareSlug(value, stripExtension = false) {
+	let normalizedValue = String(value || '').toLowerCase().trim();
+	if (stripExtension) {
+		normalizedValue = normalizedValue.replace(/\.[a-z0-9]+$/i, '');
+	}
+	return normalizedValue
 		.replace(/\s+/g, '-')
 		.replace(/[^a-z0-9-]/g, '')
 		.replace(/-+/g, '-')
@@ -79,7 +80,7 @@ function normalizeShareSlug(value) {
 }
 
 function buildSongSharePath(song) {
-	return normalizeShareSlug(song.shareSlug || song.title || song.id);
+	return normalizeShareSlug(song.shareSlug || song.title || song.id, true);
 }
 
 function buildVersionShareSlug(song, versionIndex) {
@@ -644,7 +645,7 @@ function createSongCard(song) {
 	// Build version tabs HTML — always shown; single-version songs get an "Original" tab
 	const hasVersions = song.versions && song.versions.length > 1;
 	const tabVersions = song.versions || [{ filename: song.filename, label: 'Original' }];
-	const defaultIndex = defaultVersionIndex(song);
+	const defaultIndex = selectedVersions[song.id] ?? defaultVersionIndex(song);
 	const versionTabsHtml = `
 		<div class="version-tabs" id="version-tabs-${song.id}">
 			${tabVersions.map((v, i) => {
