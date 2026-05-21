@@ -17,7 +17,6 @@
     <meta name="twitter:description" content="A dramatic, shadow-lit track about temptation, masks, and the danger hidden behind attraction. Listen now.">
     <meta name="twitter:image" content="https://cosmicphoenix171.github.io/StellarVail/Steller.png">
     <link rel="canonical" href="https://cosmicphoenix171.github.io/StellarVail/share/demon-in-disguise/">
-    <meta http-equiv="refresh" content="0; url=../../?track=demon-in-disguise-v2mp3">
 	<script>
 	(function () {
 		const defaultTrackId = "demon-in-disguise-v2mp3";
@@ -25,11 +24,17 @@
 		const params = new URLSearchParams(window.location.search);
 		const versionSlug = (params.get('v') || '').trim().toLowerCase();
 		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;
-		window.location.replace('../../?track=' + encodeURIComponent(targetTrackId));
+		const fallbackLink = document.getElementById('share-redirect-link');
+		const targetUrl = '../../?track=' + encodeURIComponent(targetTrackId);
+		if (fallbackLink) fallbackLink.href = targetUrl;
+		window.location.replace(targetUrl);
 	}());
 	</script>
 </head>
 <body>
-    <p>Redirecting to <a href="../../?track=demon-in-disguise-v2mp3">Demon in Disguise</a> on Stellar Vail.</p>
+	<p>Redirecting to <a id="share-redirect-link" href="../../?track=demon-in-disguise-v2mp3">Demon in Disguise</a> on Stellar Vail.</p>
+	<noscript>
+		<p>JavaScript is required to open the exact shared version. Without it, this link opens the default version.</p>
+	</noscript>
 </body>
 </html>

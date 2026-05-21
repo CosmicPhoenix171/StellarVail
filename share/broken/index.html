@@ -17,7 +17,6 @@
     <meta name="twitter:description" content="A bruised, emotional electronic anthem about fallout, silence, and what survives after the break. Listen now.">
     <meta name="twitter:image" content="https://cosmicphoenix171.github.io/StellarVail/Steller.png">
     <link rel="canonical" href="https://cosmicphoenix171.github.io/StellarVail/share/broken/">
-    <meta http-equiv="refresh" content="0; url=../../?track=song3">
 	<script>
 	(function () {
 		const defaultTrackId = "song3";
@@ -25,11 +24,17 @@
 		const params = new URLSearchParams(window.location.search);
 		const versionSlug = (params.get('v') || '').trim().toLowerCase();
 		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;
-		window.location.replace('../../?track=' + encodeURIComponent(targetTrackId));
+		const fallbackLink = document.getElementById('share-redirect-link');
+		const targetUrl = '../../?track=' + encodeURIComponent(targetTrackId);
+		if (fallbackLink) fallbackLink.href = targetUrl;
+		window.location.replace(targetUrl);
 	}());
 	</script>
 </head>
 <body>
-    <p>Redirecting to <a href="../../?track=song3">Broken (Original)</a> on Stellar Vail.</p>
+	<p>Redirecting to <a id="share-redirect-link" href="../../?track=song3">Broken (Original)</a> on Stellar Vail.</p>
+	<noscript>
+		<p>JavaScript is required to open the exact shared version. Without it, this link opens the default version.</p>
+	</noscript>
 </body>
 </html>

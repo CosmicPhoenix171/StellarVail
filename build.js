@@ -207,7 +207,6 @@ function buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shar
     <meta name="twitter:description" content="${escapeHtml(description)}">
     <meta name="twitter:image" content="${escapeHtml(imageUrl)}">
     <link rel="canonical" href="${escapeHtml(shareUrl)}">
-    <meta http-equiv="refresh" content="0; url=${escapeHtml(redirectUrl)}">
 	<script>
 	(function () {
 		const defaultTrackId = ${JSON.stringify(defaultTrackId)};
@@ -215,12 +214,18 @@ function buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shar
 		const params = new URLSearchParams(window.location.search);
 		const versionSlug = (params.get('v') || '').trim().toLowerCase();
 		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;
-		window.location.replace('../../?track=' + encodeURIComponent(targetTrackId));
+		const fallbackLink = document.getElementById('share-redirect-link');
+		const targetUrl = '../../?track=' + encodeURIComponent(targetTrackId);
+		if (fallbackLink) fallbackLink.href = targetUrl;
+		window.location.replace(targetUrl);
 	}());
 	</script>
 </head>
 <body>
-    <p>Redirecting to <a href="${escapeHtml(redirectUrl)}">${escapeHtml(trackTitle)}</a> on Stellar Vail.</p>
+	<p>Redirecting to <a id="share-redirect-link" href="${escapeHtml(redirectUrl)}">${escapeHtml(trackTitle)}</a> on Stellar Vail.</p>
+	<noscript>
+		<p>JavaScript is required to open the exact shared version. Without it, this link opens the default version.</p>
+	</noscript>
 </body>
 </html>
 `;
