@@ -40,6 +40,7 @@ const heardVersions = new Set(JSON.parse(localStorage.getItem('sv_heard_v') || '
 
 // Tracks selected version index per song card: { [songBaseId]: index }
 const selectedVersions = {};
+const SHARE_TRACK_QUERY_PARAM = 'track';
 
 function defaultVersionIndex(song) {
 	if (!song?.versions?.length) return 0;
@@ -59,6 +60,77 @@ function versionFilename(song, versionIndex) {
 	const vi = versionIndex ?? (selectedVersions[song.id] ?? defaultVersionIndex(song));
 	if (song.versions && song.versions[vi]) return song.versions[vi].filename;
 	return song.filename;
+}
+
+function getSharedTrackIdFromUrl() {
+	const params = new URLSearchParams(window.location.search);
+	return params.get(SHARE_TRACK_QUERY_PARAM)?.trim() || '';
+}
+
+function buildTrackShareUrl(songBaseId, versionIndex) {
+	const song = songsData.find((entry) => entry.id === songBaseId);
+	if (!song) return '';
+	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
+	const url = new URL(window.location.href);
+	url.searchParams.set(SHARE_TRACK_QUERY_PARAM, versionId(song, vi));
+	url.hash = '';
+	return url.toString();
+}
+
+function fallbackCopyText(text) {
+	const input = document.createElement('textarea');
+	input.value = text;
+	input.setAttribute('readonly', '');
+	input.style.position = 'absolute';
+	input.style.left = '-9999px';
+	document.body.appendChild(input);
+	input.select();
+	document.execCommand('copy');
+	document.body.removeChild(input);
+}
+
+async function copySongLink(songBaseId, versionIndex, event) {
+	event?.stopPropagation();
+	const shareButton = event?.currentTarget || event?.target?.closest('.share-button');
+	const shareUrl = buildTrackShareUrl(songBaseId, versionIndex);
+	if (!shareUrl) return;
+
+	try {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(shareUrl);
+		} else {
+			fallbackCopyText(shareUrl);
+		}
+		if (shareButton) {
+			const originalLabel = shareButton.dataset.label || shareButton.textContent;
+			shareButton.dataset.label = originalLabel;
+			shareButton.textContent = 'Copied!';
+			shareButton.classList.add('copied');
+			window.setTimeout(() => {
+				shareButton.textContent = shareButton.dataset.label || 'Share';
+				shareButton.classList.remove('copied');
+			}, 1600);
+		}
+	} catch (error) {
+		console.error('Could not copy share link:', error);
+	}
+}
+
+function openSharedTrackFromUrl() {
+	const trackId = getSharedTrackIdFromUrl();
+	if (!trackId) return false;
+
+	const resolved = resolveSongAndVersion(trackId);
+	if (!resolved) return false;
+
+	selectedVersions[resolved.song.id] = resolved.vi;
+	if (resolved.song.versions?.length) {
+		selectVersion(resolved.song.id, resolved.vi);
+	} else {
+		selectSong(resolved.song.id);
+	}
+	loadSongToPlayer(resolved.song.id, resolved.vi);
+	return true;
 }
 
 // Format date string (YYYY-MM-DD) to readable format
@@ -483,7 +555,9 @@ function renderSongs() {
 	songsContainer.innerHTML = '';
 
 	songsData.forEach((song) => {
-		selectedVersions[song.id] = defaultVersionIndex(song);
+		if (!Number.isInteger(selectedVersions[song.id])) {
+			selectedVersions[song.id] = defaultVersionIndex(song);
+		}
 		const songCard = createSongCard(song);
 		songsContainer.appendChild(songCard);
 
@@ -510,6 +584,9 @@ function renderSongs() {
 	}
 	if (playingBaseSongId) {
 		moveCardToPlayer(playingBaseSongId);
+	}
+	if (!playingBaseSongId) {
+		openSharedTrackFromUrl();
 	}
 }
 
@@ -580,9 +657,14 @@ function createSongCard(song) {
 					<span class="comment-number">0</span>
 				</span>
 			</div>
-			<div class="play-button-wrap" onclick="togglePlaySong('${song.id}', ${i})">
-				<button class="play-button version-play-btn${!heardVersions.has(vid) && !isAdminMode ? ' version-new' : ''}" onclick="event.stopPropagation(); togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
-					▶ Play${hasVersions ? ' ' + v.label : ''}
+			<div class="version-action-row">
+				<div class="play-button-wrap" onclick="togglePlaySong('${song.id}', ${i})">
+					<button class="play-button version-play-btn${!heardVersions.has(vid) && !isAdminMode ? ' version-new' : ''}" onclick="event.stopPropagation(); togglePlaySong('${song.id}', ${i})" data-song-id="${song.id}" data-version-index="${i}">
+						▶ Play${hasVersions ? ' ' + v.label : ''}
+					</button>
+				</div>
+				<button class="share-button" type="button" onclick="copySongLink('${song.id}', ${i}, event)" title="Copy link to this ${hasVersions ? 'version' : 'song'}">
+					Share
 				</button>
 			</div>
 			<div class="detail-section" id="detail-section-${vid}">
