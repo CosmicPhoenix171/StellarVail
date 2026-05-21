@@ -71,9 +71,14 @@ function buildTrackShareUrl(songBaseId, versionIndex) {
 	const song = songsData.find((entry) => entry.id === songBaseId);
 	if (!song) return '';
 	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
-	const url = new URL(window.location.href);
-	url.searchParams.set(SHARE_TRACK_QUERY_PARAM, versionId(song, vi));
-	url.hash = '';
+	const trackId = versionId(song, vi);
+	const baseUrl = new URL(window.location.href);
+	baseUrl.search = '';
+	baseUrl.hash = '';
+	const appRoot = /\.[a-z0-9]+$/i.test(baseUrl.pathname)
+		? baseUrl.pathname.replace(/[^/]+$/, '')
+		: (baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`);
+	const url = new URL(`share/${encodeURIComponent(trackId)}/`, `${baseUrl.origin}${appRoot}`);
 	return url.toString();
 }
 
