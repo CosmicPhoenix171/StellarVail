@@ -21,6 +21,7 @@ let songStats = {}; // Track rating and listen data for sorting
 let sortDebounceTimer = null;
 let pendingRating = null; // { songId, rating } stored when a guest tries to rate
 let playbackAnalytics = null;
+let currentStarBoost = 0;
 // Usernames that get admin powers (all ratings visible, listen count not incremented)
 const ADMIN_USERNAMES = ['Phoenix'];
 
@@ -1494,6 +1495,7 @@ function startStarBoost() {
 
 	const tick = () => {
 		if (audioPlayer.paused) {
+			currentStarBoost = 0;
 			document.documentElement.style.setProperty('--star-boost', '0');
 			starBoostRaf = requestAnimationFrame(tick);
 			return;
@@ -1507,6 +1509,7 @@ function startStarBoost() {
 		const avg = sum / bins;
 		// Map average magnitude to a stronger visible boost (0 to ~2)
 		const boost = Math.min(2, (avg / 255) * 3);
+		currentStarBoost = boost;
 		document.documentElement.style.setProperty('--star-boost', boost.toFixed(3));
 
 		starBoostRaf = requestAnimationFrame(tick);
@@ -1518,6 +1521,7 @@ function startStarBoost() {
 function stopStarBoost() {
 	if (starBoostRaf) cancelAnimationFrame(starBoostRaf);
 	starBoostRaf = null;
+	currentStarBoost = 0;
 	document.documentElement.style.setProperty('--star-boost', '0');
 }
 
@@ -2489,6 +2493,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function initAuroraCanvas() {
 	const canvas = document.getElementById('aurora-canvas');
 	if (!canvas) return;
+	if (document.body.classList.contains('low-perf-mode')) {
+		document.body.classList.add('aurora-disabled');
+		return;
+	}
 	if (auroraDisabled) {
 		disableAuroraEffects();
 		return;
@@ -2850,8 +2858,10 @@ const starfieldCanvas = document.getElementById('starfield');
 const starfieldCtx = starfieldCanvas ? starfieldCanvas.getContext('2d') : null;
 let stars = [];
 const STAR_COUNT = 200;
+const LOW_PERF_STAR_COUNT = 80;
 const BASE_SPEED = 0.3;
 const BEAT_SPEED_MULTIPLIER = 2;
+let starfieldRaf = null;
 
 // Star colors that shift with the beat
 const starColors = [
@@ -2869,11 +2879,26 @@ function initStarfield() {
 	window.addEventListener('resize', resizeStarfield);
 	
 	// Initialize stars
-	for (let i = 0; i < STAR_COUNT; i++) {
+	stars = [];
+	const starCount = document.body.classList.contains('low-perf-mode') ? LOW_PERF_STAR_COUNT : STAR_COUNT;
+	for (let i = 0; i < starCount; i++) {
 		stars.push(createStar());
 	}
-	
-	animateStarfield();
+
+	renderStarfieldFrame(false);
+	if (audioPlayer) {
+		audioPlayer.addEventListener('play', scheduleStarfieldAnimation);
+		audioPlayer.addEventListener('pause', stopStarfieldAnimation);
+		audioPlayer.addEventListener('ended', stopStarfieldAnimation);
+	}
+	document.addEventListener('visibilitychange', () => {
+		if (document.hidden) {
+			stopStarfieldAnimation();
+			return;
+		}
+		if (audioPlayer && !audioPlayer.paused) scheduleStarfieldAnimation();
+	});
+	if (audioPlayer && !audioPlayer.paused) scheduleStarfieldAnimation();
 }
 
 function resizeStarfield() {
@@ -2903,19 +2928,14 @@ function createStar(fromCenter = false) {
 	};
 }
 
-function animateStarfield() {
+function renderStarfieldFrame(isPlaying) {
 	if (!starfieldCanvas || !starfieldCtx) return;
 	
 	const ctx = starfieldCtx;
 	const canvas = starfieldCanvas;
 	const centerX = canvas.width / 2;
 	const centerY = canvas.height / 2;
-	
-	// Check if audio is playing
-	const isPlaying = audioPlayer && !audioPlayer.paused;
-	
-	// Get current beat intensity from CSS variable
-	const boost = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--star-boost')) || 0;
+	const boost = currentStarBoost;
 	
 	// Clear canvas completely (transparent so background shows through)
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2975,8 +2995,10 @@ function animateStarfield() {
 		
 		ctx.beginPath();
 		ctx.arc(star.x, star.y, glowSize, 0, Math.PI * 2);
-		ctx.fillStyle = gradient;
-		ctx.fill();
+		if (!document.body.classList.contains('low-perf-mode')) {
+			ctx.fillStyle = gradient;
+			ctx.fill();
+		}
 		
 		// Core
 		ctx.beginPath();
@@ -2984,8 +3006,26 @@ function animateStarfield() {
 		ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
 		ctx.fill();
 	}
-	
-	requestAnimationFrame(animateStarfield);
+}
+
+function animateStarfield() {
+	starfieldRaf = null;
+	const isPlaying = !!audioPlayer && !audioPlayer.paused && !document.hidden;
+	renderStarfieldFrame(isPlaying);
+	if (isPlaying) {
+		starfieldRaf = requestAnimationFrame(animateStarfield);
+	}
+}
+
+function scheduleStarfieldAnimation() {
+	if (starfieldRaf || document.hidden) return;
+	starfieldRaf = requestAnimationFrame(animateStarfield);
+}
+
+function stopStarfieldAnimation() {
+	if (starfieldRaf) cancelAnimationFrame(starfieldRaf);
+	starfieldRaf = null;
+	renderStarfieldFrame(false);
 }
 
 // Initialize

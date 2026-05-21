@@ -2492,7 +2492,26 @@ body.low-perf-mode .search-bar,
 body.low-perf-mode .user-pill,
 body.low-perf-mode .now-playing-panel,
 body.low-perf-mode .player-bar {
+    -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+}
+
+body.low-perf-mode .list-player-panel,
+body.low-perf-mode .list-player-panel::before,
+body.low-perf-mode .now-playing-side-panel,
+body.low-perf-mode .rating-popup-overlay {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+body.low-perf-mode .list-player-panel::before,
+body.low-perf-mode .aurora-canvas {
+    display: none !important;
+}
+
+body.low-perf-mode .now-playing-side-panel {
+    animation: none !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 body.low-perf-mode .song-card:hover {
