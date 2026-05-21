@@ -1,6 +1,11 @@
 ﻿{
     "filename": "1 Unread.wav",
     "title": "UNREAD",
+    "genres": [
+        "electro-pop",
+        "EDM",
+        "glitch pop"
+    ],
     "dateAdded": "August 14, 2025",
     "versions": [
         { "filename": "1 Unread.wav",     "label": "Original" },
