@@ -2,6 +2,7 @@
     "id": "song4",
     "filename": "UNREAD.wav",
     "title": "UNREAD",
+    "shareSlug": "unread",
     "art": "377e82bc-1063-48dd-b261-83371b8a1957.png",
     "genres": [
         "electro-pop",

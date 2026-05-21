@@ -67,18 +67,42 @@ function getSharedTrackIdFromUrl() {
 	return params.get(SHARE_TRACK_QUERY_PARAM)?.trim() || '';
 }
 
+function normalizeShareSlug(value) {
+	return String(value || '')
+		.toLowerCase()
+		.trim()
+		.replace(/\.[a-z0-9]+$/i, '')
+		.replace(/\s+/g, '-')
+		.replace(/[^a-z0-9-]/g, '')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
+function buildSongSharePath(song) {
+	return normalizeShareSlug(song.shareSlug || song.title || song.id);
+}
+
+function buildVersionShareSlug(song, versionIndex) {
+	const vi = versionIndex ?? (selectedVersions[song.id] ?? defaultVersionIndex(song));
+	if (!song.versions || song.versions.length <= 1 || vi === 0) return '';
+	return normalizeShareSlug(song.versions[vi].label || `v${vi + 1}`);
+}
+
 function buildTrackShareUrl(songBaseId, versionIndex) {
 	const song = songsData.find((entry) => entry.id === songBaseId);
 	if (!song) return '';
-	const vi = versionIndex ?? (selectedVersions[songBaseId] ?? defaultVersionIndex(song));
-	const trackId = versionId(song, vi);
+	const sharePath = buildSongSharePath(song);
+	const versionSlug = buildVersionShareSlug(song, versionIndex);
 	const baseUrl = new URL(window.location.href);
 	baseUrl.search = '';
 	baseUrl.hash = '';
 	const appRoot = /\.[a-z0-9]+$/i.test(baseUrl.pathname)
 		? baseUrl.pathname.replace(/[^/]+$/, '')
 		: (baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`);
-	const url = new URL(`share/${encodeURIComponent(trackId)}/`, `${baseUrl.origin}${appRoot}`);
+	const url = new URL(`share/${encodeURIComponent(sharePath)}/`, `${baseUrl.origin}${appRoot}`);
+	if (versionSlug) {
+		url.searchParams.set('v', versionSlug);
+	}
 	return url.toString();
 }
 
@@ -537,6 +561,7 @@ async function loadSongs() {
 						folder,
 						dateAdded: info.dateAdded || today,
 						artist: info.artist || '',
+						shareSlug: info.shareSlug || '',
 						description: info.description || '',
 						versions: info.versions || null,
 						art: info.art ? `${basePath}music/${folder}/${info.art}` : null

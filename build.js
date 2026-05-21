@@ -85,10 +85,25 @@ function readExistingIndex() {
 	return readJsonFile(indexFile);
 }
 
+function normalizeShareSlug(value) {
+	return String(value || '')
+		.toLowerCase()
+		.trim()
+		.replace(/\.[a-z0-9]+$/i, '')
+		.replace(/\s+/g, '-')
+		.replace(/[^a-z0-9-]/g, '')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
 function discoverSongFolders() {
 	return fs.readdirSync(musicDir).filter((name) => {
 		const fullPath = path.join(musicDir, name);
-		return fs.statSync(fullPath).isDirectory() && fs.existsSync(path.join(fullPath, 'info.json'));
+		if (!fs.statSync(fullPath).isDirectory()) return false;
+		const infoPath = path.join(fullPath, 'info.json');
+		if (!fs.existsSync(infoPath)) return false;
+		const info = readJsonFile(infoPath);
+		return info.disabled !== true;
 	});
 }
 
@@ -120,6 +135,7 @@ function buildSongs(folderNames) {
 		return {
 			id: buildSongId(info),
 			title: info.title || info.filename.replace(/\.[^.]+$/i, ''),
+			shareSlug: info.shareSlug || '',
 			filename: info.filename,
 			folder,
 			artist: info.artist || '',
@@ -136,6 +152,19 @@ function buildTrackTitle(song, version, hasMultipleVersions) {
 	return `${song.title} (${version.label || 'Original'})`;
 }
 
+function buildShareCardTitle(song) {
+	return song.title;
+}
+
+function buildSongSharePath(song) {
+	return normalizeShareSlug(song.shareSlug || song.title || song.folder || song.id);
+}
+
+function buildVersionShareSlug(song, versionIndex) {
+	if (!song.versions || song.versions.length <= 1 || versionIndex === 0) return '';
+	return normalizeShareSlug(song.versions[versionIndex].label || `v${versionIndex + 1}`);
+}
+
 function buildTrackDescription(song, trackTitle) {
 	const mappedDescription = shareDescriptionsByFolder[song.folder];
 	if (mappedDescription) return mappedDescription;
@@ -147,33 +176,48 @@ function buildTrackDescription(song, trackTitle) {
 
 function resolveImageUrl(song) {
 	if (song.art) {
-		return `${publicSiteUrl}/music/${encodeURIComponent(song.folder)}/${encodeURIComponent(song.art)}`;
+		const encodedFolder = encodeURIComponent(song.folder);
+		const encodedArtPath = song.art
+			.replace(/\\/g, '/')
+			.split('/')
+			.map((segment) => encodeURIComponent(segment))
+			.join('/');
+		return new URL(`music/${encodedFolder}/${encodedArtPath}`, `${publicSiteUrl}/`).toString();
 	}
 	return `${publicSiteUrl}/Steller.png`;
 }
 
-function buildSharePageHtml({ trackTitle, description, imageUrl, shareUrl, redirectUrl }) {
+function buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shareUrl, redirectUrl, defaultTrackId, versionTargets }) {
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(trackTitle)} | Stellar Vail</title>
+	<title>${escapeHtml(cardTitle)} | Stellar Vail</title>
     <meta name="description" content="${escapeHtml(description)}">
     <meta property="og:type" content="music.song">
-    <meta property="og:title" content="${escapeHtml(trackTitle)}">
+	<meta property="og:title" content="${escapeHtml(cardTitle)}">
     <meta property="og:description" content="${escapeHtml(description)}">
     <meta property="og:site_name" content="Stellar Vail">
     <meta property="og:url" content="${escapeHtml(shareUrl)}">
     <meta property="og:image" content="${escapeHtml(imageUrl)}">
-    <meta property="og:image:alt" content="${escapeHtml(trackTitle)} cover art">
+	<meta property="og:image:alt" content="${escapeHtml(cardTitle)} cover art">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${escapeHtml(trackTitle)}">
+	<meta name="twitter:title" content="${escapeHtml(cardTitle)}">
     <meta name="twitter:description" content="${escapeHtml(description)}">
     <meta name="twitter:image" content="${escapeHtml(imageUrl)}">
     <link rel="canonical" href="${escapeHtml(shareUrl)}">
     <meta http-equiv="refresh" content="0; url=${escapeHtml(redirectUrl)}">
-    <script>window.location.replace(${JSON.stringify(redirectUrl)});</script>
+	<script>
+	(function () {
+		const defaultTrackId = ${JSON.stringify(defaultTrackId)};
+		const versionTargets = ${JSON.stringify(versionTargets)};
+		const params = new URLSearchParams(window.location.search);
+		const versionSlug = (params.get('v') || '').trim().toLowerCase();
+		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;
+		window.location.replace('../../?track=' + encodeURIComponent(targetTrackId));
+	}());
+	</script>
 </head>
 <body>
     <p>Redirecting to <a href="${escapeHtml(redirectUrl)}">${escapeHtml(trackTitle)}</a> on Stellar Vail.</p>
@@ -191,25 +235,30 @@ function generateSharePages(songs) {
 	for (const song of songs) {
 		const versions = song.versions?.length ? song.versions : [{ filename: song.filename, label: 'Original' }];
 		const hasMultipleVersions = versions.length > 1;
+		const defaultTrackId = versionId(song, 0);
+		const sharePath = buildSongSharePath(song);
+		const trackTitle = buildTrackTitle(song, versions[0], hasMultipleVersions);
+		const cardTitle = buildShareCardTitle(song);
+		const description = buildTrackDescription(song, trackTitle);
+		const imageUrl = resolveImageUrl(song);
+		const shareUrl = `${publicSiteUrl}/share/${encodeURIComponent(sharePath)}/`;
+		const redirectUrl = `../../?track=${encodeURIComponent(defaultTrackId)}`;
+		const targetDir = path.join(shareDir, sharePath);
+		const versionTargets = {};
 
 		versions.forEach((version, versionIndex) => {
-			const trackId = versionId(song, versionIndex);
-			const trackTitle = buildTrackTitle(song, version, hasMultipleVersions);
-			const description = buildTrackDescription(song, trackTitle);
-			const imageUrl = resolveImageUrl(song);
-			const encodedTrackId = encodeURIComponent(trackId);
-			const shareUrl = `${publicSiteUrl}/share/${encodedTrackId}/`;
-			const redirectUrl = `../../?track=${encodeURIComponent(trackId)}`;
-			const targetDir = path.join(shareDir, trackId);
-
-			fs.mkdirSync(targetDir, { recursive: true });
-			fs.writeFileSync(
-				path.join(targetDir, 'index.html'),
-				buildSharePageHtml({ trackTitle, description, imageUrl, shareUrl, redirectUrl }),
-				'utf8'
-			);
-			pageCount += 1;
+			const versionSlug = buildVersionShareSlug(song, versionIndex);
+			if (!versionSlug) return;
+			versionTargets[versionSlug] = versionId(song, versionIndex);
 		});
+
+		fs.mkdirSync(targetDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(targetDir, 'index.html'),
+			buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shareUrl, redirectUrl, defaultTrackId, versionTargets }),
+			'utf8'
+		);
+		pageCount += 1;
 	}
 
 	return pageCount;

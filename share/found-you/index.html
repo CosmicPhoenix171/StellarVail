@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Found you (Original) | Stellar Vail</title>
+	<title>Found you | Stellar Vail</title>
     <meta name="description" content="A bright, emotional rush about finally reaching the person or feeling you thought you lost. Listen now.">
     <meta property="og:type" content="music.song">
-    <meta property="og:title" content="Found you (Original)">
+	<meta property="og:title" content="Found you">
     <meta property="og:description" content="A bright, emotional rush about finally reaching the person or feeling you thought you lost. Listen now.">
     <meta property="og:site_name" content="Stellar Vail">
     <meta property="og:url" content="https://cosmicphoenix171.github.io/StellarVail/share/found-you/">
     <meta property="og:image" content="https://cosmicphoenix171.github.io/StellarVail/Steller.png">
-    <meta property="og:image:alt" content="Found you (Original) cover art">
+	<meta property="og:image:alt" content="Found you cover art">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Found you (Original)">
+	<meta name="twitter:title" content="Found you">
     <meta name="twitter:description" content="A bright, emotional rush about finally reaching the person or feeling you thought you lost. Listen now.">
     <meta name="twitter:image" content="https://cosmicphoenix171.github.io/StellarVail/Steller.png">
     <link rel="canonical" href="https://cosmicphoenix171.github.io/StellarVail/share/found-you/">
     <meta http-equiv="refresh" content="0; url=../../?track=found-you">
-    <script>window.location.replace("../../?track=found-you");</script>
+	<script>
+	(function () {
+		const defaultTrackId = "found-you";
+		const versionTargets = {"v2":"found-you-v2"};
+		const params = new URLSearchParams(window.location.search);
+		const versionSlug = (params.get('v') || '').trim().toLowerCase();
+		const targetTrackId = versionTargets[versionSlug] || defaultTrackId;
+		window.location.replace('../../?track=' + encodeURIComponent(targetTrackId));
+	}());
+	</script>
 </head>
 <body>
     <p>Redirecting to <a href="../../?track=found-you">Found you (Original)</a> on Stellar Vail.</p>
