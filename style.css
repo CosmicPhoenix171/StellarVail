@@ -3519,7 +3519,22 @@ body.admin-page {
         margin-left: 2px;
     }
     .song-card .play-button.playing::before { content: '⏸'; margin-left: 0; }
-    .song-card .share-button { display: none; }
+    .song-card .share-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 0;
+    }
+    .song-card .share-button::before {
+        content: '↗';
+        font-size: 1rem;
+        line-height: 1;
+    }
 
     /* Selected/now-playing highlight stays subtle on mobile */
     .song-card.panel-selected,
