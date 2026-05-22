@@ -14,37 +14,6 @@ const publicSiteUrl = 'https://cosmicphoenix171.github.io/StellarVail';
 const musicDir = path.join(__dirname, 'music');
 const indexFile = path.join(musicDir, 'index.json');
 
-const shareDescriptionsByFolder = {
-	'Tik': 'A sharp, glitch-lit rush of rhythm and tension built to hit fast and stay in your head. Listen now.',
-	'before morning rise': 'A quiet late-night drift that blooms into something warm, hopeful, and impossible to shake. Listen now.',
-	'Broken': 'A bruised, emotional electronic anthem about fallout, silence, and what survives after the break. Listen now.',
-	'UNREAD': 'An electro-pop, EDM, and glitch pop track charged with distance, suspense, and all the words still left unopened. Listen now.',
-	'Chemical  Beat': 'A neon-fueled pulse of synthetic energy, restless motion, and pure club-night momentum. Listen now.',
-	'Dream escape': 'A soaring escape into motion, memory, and the kind of night that feels bigger than real life. Listen now.',
-	'Emotion': 'A luminous synth-driven confession that leans fully into feeling, vulnerability, and release. Listen now.',
-	'fantasy or reality': 'A dreamy, cinematic track caught between obsession and truth, where the line keeps disappearing. Listen now.',
-	'where': 'A searching, atmospheric song about distance, longing, and trying to find the signal through the dark. Listen now.',
-	'Burn it P.M.E.L.V': 'An intense electronic burn of chaos, adrenaline, and starting over with the match already lit. Listen now.',
-	'Clockwork': 'A tightly wound mechanical groove where precision, pressure, and momentum lock perfectly into place. Listen now.',
-	'Dreamloop': 'A hypnotic loop of memory and melody that keeps pulling you deeper every time it turns. Listen now.',
-	'Found you': 'A bright, emotional rush about finally reaching the person or feeling you thought you lost. Listen now.',
-	'Hide Away V2': 'A sleek escape anthem with late-night tension, magnetic hooks, and nowhere safe left to hide. Listen now.',
-	'I know': 'A direct, intimate track that hits with certainty, ache, and the weight of what can no longer be denied. Listen now.',
-	"I'm doing fine": 'A bittersweet synth-pop confession that says one thing out loud and another underneath. Listen now.',
-	'My Way': 'A defiant, self-owned anthem about choosing your path and living with the volume turned all the way up. Listen now.',
-	'Romance.exe V2': 'A digital-age love song where longing, obsession, and synthetic beauty blur into one signal. Listen now.',
-	'Take the chance': 'An urgent leap-forward track about risk, possibility, and saying yes before the moment disappears. Listen now.',
-	'Toxic tears': 'A dark, shimmering release of heartbreak, damage, and beauty still glowing through the ruin. Listen now.',
-	'404': 'A glitchy emotional blackout where connection fails, the signal drops, and the feeling keeps echoing. Listen now.',
-	'Demon in Disguise': 'A dramatic, shadow-lit track about temptation, masks, and the danger hidden behind attraction. Listen now.',
-	'Fairytale': 'A romantic, dream-bright song that feels like magic until the cracks start to show. Listen now.',
-	'Halloween, Halloween': 'A playful haunted rush of candy-night chaos, costumes, and dark-pop energy. Listen now.',
-	'Looping': 'A restless spiral of hooks and momentum that keeps circling back stronger each time. Listen now.',
-	'More Than Code': 'A cinematic synth-pop track about love, identity, and feeling human inside the machine. Listen now.',
-	'Sugar Sweet': 'A glossy, addictive rush of charm and bite that feels sugary on the surface and dangerous underneath. Listen now.',
-	'1 Unread': 'An electro-pop, EDM, and glitch pop remix built from missed messages, unresolved tension, and everything waiting behind one notification. Listen now.'
-};
-
 const legacyIdMap = {
 	'Tik.wav': 'song1',
 	'before morning rise.wav': 'song2',
@@ -166,12 +135,7 @@ function buildVersionShareSlug(song, versionIndex) {
 }
 
 function buildTrackDescription(song, trackTitle) {
-	const mappedDescription = shareDescriptionsByFolder[song.folder];
-	if (mappedDescription) return mappedDescription;
-	if (song.description) return song.description;
-	if (song.genres?.length) return `${song.genres.join(', ')} on Stellar Vail. Listen now.`;
-	if (song.artist) return `${trackTitle} by ${song.artist} on Stellar Vail.`;
-	return `Listen to ${trackTitle} on Stellar Vail.`;
+	return 'Listen now';
 }
 
 function resolveImageUrl(song) {
