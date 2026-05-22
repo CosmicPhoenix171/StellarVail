@@ -300,8 +300,8 @@ function renderSongGroup(song, rows) {
 	const totalSessions = sortedRows.reduce((sum, row) => sum + row.sessionCount, 0);
 	const totalPublicListens = sortedRows.reduce((sum, row) => sum + row.publicListens, 0);
 	const totalRatings = sortedRows.reduce((sum, row) => sum + row.ratingCount, 0);
-	const topVersionRow = [...sortedRows].sort((first, second) => second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || first.versionIndex - second.versionIndex)[0] || sortedRows[0];
-	const activeVersionIndex = selectedAdminVersions[song.id] ?? topVersionRow?.versionIndex ?? defaultVersionIndex(song);
+	const latestSessionRow = [...sortedRows].sort((first, second) => second.lastSessionAt - first.lastSessionAt || second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || first.versionIndex - second.versionIndex)[0] || sortedRows[0];
+	const activeVersionIndex = selectedAdminVersions[song.id] ?? latestSessionRow?.versionIndex ?? defaultVersionIndex(song);
 	const activeRow = sortedRows.find((row) => row.versionIndex === activeVersionIndex) || sortedRows[0];
 	selectedAdminVersions[song.id] = activeRow.versionIndex;
 	const versionTabs = sortedRows.map((row) => `
@@ -338,15 +338,15 @@ function groupRowsBySong(rows) {
 function renderRows(rows) {
 	const songListElement = document.getElementById('admin-song-list');
 	const updatedAtElement = document.getElementById('admin-updated-at');
-	const sortedRows = [...rows].sort((first, second) => second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || second.lastSessionAt - first.lastSessionAt || first.song.title.localeCompare(second.song.title));
+	const sortedRows = [...rows].sort((first, second) => second.lastSessionAt - first.lastSessionAt || second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || first.song.title.localeCompare(second.song.title));
 	const groupedRows = Array.from(groupRowsBySong(sortedRows).values()).sort((first, second) => {
+		const latestFirst = Math.max(...first.rows.map((row) => row.lastSessionAt));
+		const latestSecond = Math.max(...second.rows.map((row) => row.lastSessionAt));
 		const totalListensFirst = first.rows.reduce((sum, row) => sum + row.publicListens, 0);
 		const totalListensSecond = second.rows.reduce((sum, row) => sum + row.publicListens, 0);
 		const totalSessionsFirst = first.rows.reduce((sum, row) => sum + row.sessionCount, 0);
 		const totalSessionsSecond = second.rows.reduce((sum, row) => sum + row.sessionCount, 0);
-		const latestFirst = Math.max(...first.rows.map((row) => row.lastSessionAt));
-		const latestSecond = Math.max(...second.rows.map((row) => row.lastSessionAt));
-		return totalListensSecond - totalListensFirst || totalSessionsSecond - totalSessionsFirst || latestSecond - latestFirst || first.song.title.localeCompare(second.song.title);
+		return latestSecond - latestFirst || totalListensSecond - totalListensFirst || totalSessionsSecond - totalSessionsFirst || first.song.title.localeCompare(second.song.title);
 	});
 	renderSummary(sortedRows);
 	songListElement.innerHTML = groupedRows.map(({ song, rows: songRows }) => renderSongGroup(song, songRows)).join('') || '<p class="admin-empty-state">No songs found.</p>';
