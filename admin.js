@@ -68,6 +68,11 @@ function formatDateTime(timestamp) {
 	return new Date(timestamp).toLocaleString();
 }
 
+function formatSessionUser(session) {
+	if (!session) return 'Unknown listener';
+	return session.displayName || session.username || session.clientId || 'Unknown listener';
+}
+
 function averageRating(ratings) {
 	const ratingValues = Object.values(ratings || {}).map((entry) => Number(entry.rating)).filter(Boolean);
 	if (!ratingValues.length) return { count: 0, average: 0 };
@@ -81,6 +86,17 @@ function topEntries(values, limit = 3) {
 		.slice(0, limit);
 }
 
+function topListeners(byUser, limit = 3) {
+	return Object.values(byUser || {})
+		.map((userStats) => ({
+			label: userStats.displayName || userStats.username || userStats.clientId || 'Unknown listener',
+			sessions: Number(userStats.listenSessions || 0)
+		}))
+		.filter((entry) => entry.sessions > 0)
+		.sort((first, second) => second.sessions - first.sessions || first.label.localeCompare(second.label))
+		.slice(0, limit);
+}
+
 function renderMetric(label, value) {
 	return `<div class="admin-metric"><span>${label}</span><strong>${value}</strong></div>`;
 }
@@ -88,6 +104,11 @@ function renderMetric(label, value) {
 function renderMiniList(entries, emptyText) {
 	if (!entries.length) return `<span class="admin-empty">${emptyText}</span>`;
 	return entries.map(([label, value]) => `<span>${label}: <strong>${formatNumber(value)}</strong></span>`).join('');
+}
+
+function renderTopListeners(entries, emptyText) {
+	if (!entries.length) return `<span class="admin-empty">${emptyText}</span>`;
+	return entries.map((entry) => `<span>${escapeHtml(entry.label)}: <strong>${formatNumber(entry.sessions)}</strong> session${entry.sessions === 1 ? '' : 's'}</span>`).join('');
 }
 
 function escapeHtml(value) {
@@ -109,7 +130,11 @@ async function loadSongsForAdmin() {
 			const infoResponse = await fetch(`${basePath}music/${folder}/info.json`);
 			const info = await infoResponse.json();
 			const filename = info.filename;
-			const baseName = filename.replace(/\.(wav|mp3|ogg|m4a)$/i, '');
+			// Must match script.js exactly — it only strips .wav, so .mp3/.ogg/.m4a
+			// files keep their extension fused into the ID (e.g. "sugar-sweet-v3mp3").
+			// Stripping all audio extensions here would point admin at non-existent
+			// Firebase paths and show zero analytics for every mp3-backed song.
+			const baseName = filename.replace(/\.wav$/i, '');
 			const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
 			return {
 				id: info.id || legacyIdMap[filename] || safeId,
@@ -154,6 +179,11 @@ async function loadVersionAnalytics(song, versionIndex) {
 		? firstStops.reduce((sum, seconds) => sum + seconds, 0) / firstStops.length
 		: 0;
 	const repeatListenCount = Object.values(byUser).reduce((sum, userStats) => sum + Number(userStats.repeatListenCount || 0), 0);
+	const latestSession = sessionValues.reduce((latest, session) => {
+		const latestTime = Number(latest?.endedAt || latest?.updatedAt || latest?.startedAt || 0);
+		const sessionTime = Number(session?.endedAt || session?.updatedAt || session?.startedAt || 0);
+		return sessionTime > latestTime ? session : latest;
+	}, null);
 
 	return {
 		song,
@@ -175,11 +205,13 @@ async function loadVersionAnalytics(song, versionIndex) {
 		forwardSkipCount,
 		averageFirstStop,
 		repeatListenCount,
+		byUser,
 		dropOffBuckets: analytics.dropOffBuckets || {},
 		replayHotspots: analytics.replayHotspots || {},
 		conversionCounts: analytics.conversionCounts || {},
 		userCount: Object.keys(byUser).length,
-		lastSessionAt: sessionValues.reduce((latest, session) => Math.max(latest, Number(session.endedAt || session.updatedAt || session.startedAt || 0)), 0)
+		lastSessionAt: Number(latestSession?.endedAt || latestSession?.updatedAt || latestSession?.startedAt || 0),
+		lastSessionUser: formatSessionUser(latestSession)
 	};
 }
 
@@ -217,6 +249,7 @@ function renderVersionPanel(row, activeVersionIndex) {
 	const dropOffEntries = topEntries(row.dropOffBuckets, 4);
 	const replayEntries = topEntries(row.replayHotspots, 3);
 	const conversionEntries = topEntries(row.conversionCounts, 3);
+	const topListenerEntries = topListeners(row.byUser, 3);
 	const ratingText = row.ratingCount ? `${formatNumber(row.ratingAverage, 1)} (${row.ratingCount})` : '-.-';
  	const isActive = row.versionIndex === activeVersionIndex;
 
@@ -233,7 +266,7 @@ function renderVersionPanel(row, activeVersionIndex) {
 				</div>
 				<div>
 					<strong>Last session</strong>
-					<span>${formatDateTime(row.lastSessionAt)}</span>
+					<span>${formatDateTime(row.lastSessionAt)}${row.lastSessionAt ? ` · ${escapeHtml(row.lastSessionUser)}` : ''}</span>
 				</div>
 			</div>
 			<div class="admin-card-metrics">
@@ -254,6 +287,7 @@ function renderVersionPanel(row, activeVersionIndex) {
 				<div><h4>Drop-off buckets</h4>${renderMiniList(dropOffEntries, 'No drop-offs yet')}</div>
 				<div><h4>Replay hotspots</h4>${renderMiniList(replayEntries, 'No replay jumps yet')}</div>
 				<div><h4>Conversions</h4>${renderMiniList(conversionEntries, 'No conversions yet')}</div>
+				<div><h4>Top listeners</h4>${renderTopListeners(topListenerEntries, 'No listener history yet')}</div>
 			</div>
 		</div>
 	`;

@@ -2346,14 +2346,29 @@ body.aurora-disabled .play-button.version-new:hover {
         flex-direction: column;
         gap: 18px;
         overflow: visible;
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
+    /* On mobile, let the song list grow with its content and rely on page scroll
+       instead of a fixed inner-scrolling box. This kills the empty gap between
+       the last card and the bottom mini-player. */
     .songs-grid {
-        height: 60vh;
-        max-height: 60vh;
-        min-height: 320px;
-        overflow-y: auto;
-        overflow-x: hidden;
+        height: auto;
+        max-height: none;
+        min-height: 0;
+        overflow: visible;
+        padding-right: 0;
+        padding-bottom: 12px;
+    }
+
+    /* Make the list panel fill the visible viewport so the card-style backdrop
+       continues all the way down to the mini-player, instead of ending early
+       and revealing the raw page background. */
+    .list-player-panel {
+        min-height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: column;
     }
 
     .now-playing-side-panel {
@@ -2935,6 +2950,14 @@ body.admin-page {
     display: block;
 }
 
+/* Author rules with class specificity override the UA [hidden] { display:none }
+   default, so we must restore it explicitly — otherwise every version panel
+   renders stacked and tab switching looks broken (most visible on songs with
+   3+ versions like Sugar Sweet). */
+.admin-version-panel[hidden] {
+    display: none;
+}
+
 .admin-version-meta {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3024,4 +3047,574 @@ body.admin-page {
     .admin-version-meta {
         grid-template-columns: 1fr;
     }
+}
+
+/* =====================================================================
+   MOBILE SUPPORT — phones / small tablets
+   Adds: ≤900 enhancements, ≤600, ≤480, ≤360, landscape ≤600h,
+         touch-vs-hover gating, bottom-sheet now-playing, mobile menu.
+   ===================================================================== */
+
+/* Mobile-only / desktop-only utility classes */
+.mobile-only { display: none !important; }
+
+/* Mobile mini-player (Spotify-style bottom bar) — hidden by default, revealed under ≤900 */
+.mobile-mini-player { display: none; }
+
+/* Bottom-sheet chrome elements (hidden by default; revealed under ≤900) */
+.mobile-sheet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.mobile-sheet-close,
+.mobile-sheet-handle { display: none; }
+
+/* Mobile sort dropdown skin */
+.mobile-sort {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+.mobile-sort-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.mobile-sort-select {
+    flex: 1;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(189, 0, 255, 0.35);
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Mobile menu toggle (☰) */
+.mobile-menu-toggle {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--text-main);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ---------- HOVER GATING ----------
+   Hover-only effects suppressed on touch; replaced with :active feedback. */
+@media (hover: none) {
+    .sort-btn:hover,
+    .filter-chip:hover,
+    .share-button:hover,
+    .song-card:hover,
+    .play-button:hover,
+    .user-pill:hover,
+    .sch-sortable:hover,
+    .hero-cta:hover,
+    .popup-star:hover,
+    .rating-popup-skip-btn:hover {
+        transform: none;
+        filter: none;
+    }
+
+    .song-card:active { background: rgba(255, 255, 255, 0.05); }
+    .share-button:active,
+    .filter-chip:active,
+    .sort-btn:active { opacity: 0.7; }
+    .popup-star:active { transform: scale(1.15); }
+    .play-button:active { transform: translateY(1px); }
+}
+
+/* ---------- ≤ 900px (tablets + large phones) ----------
+   Convert now-playing-side-panel into a bottom sheet,
+   surface mobile chrome, hide desktop sort headers. */
+@media (max-width: 900px) {
+    .mobile-only { display: inline-flex !important; }
+    .mobile-sort { display: flex; }
+
+    /* Hide desktop sort header on mobile (single dropdown replaces it) */
+    .song-col-header { display: none; }
+
+    /* Bottom-sheet now-playing panel */
+    .now-playing-side-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        max-height: 88dvh;
+        margin: 0;
+        padding: 22px 16px 32px;
+        border-radius: 20px 20px 0 0;
+        background: rgba(10, 5, 20, 0.96);
+        border: 1px solid rgba(189, 0, 255, 0.25);
+        border-bottom: none;
+        box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.6);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        overflow-y: auto;
+        z-index: 1001;
+        transform: translateY(100%);
+        transition: transform 0.28s ease;
+        display: block;
+    }
+    body.mobile-sheet-open .now-playing-side-panel {
+        transform: translateY(0);
+    }
+
+    /* Hide the desktop player-bar / native audio on mobile — mini-player replaces it */
+    .player-bar { display: none !important; }
+
+    /* Mobile mini-player (Spotify-style) */
+    .mobile-mini-player {
+        display: none;
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        z-index: 1000;
+        background: rgba(20, 8, 36, 0.96);
+        border: 1px solid rgba(189, 0, 255, 0.35);
+        border-radius: 14px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        padding: 8px 10px;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        overflow: hidden;
+        animation: miniPlayerSlideUp 0.25s ease;
+    }
+    body.has-current-song .mobile-mini-player { display: flex; }
+    body.mobile-sheet-open .mobile-mini-player { display: none; }
+
+    .mini-player-progress {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+    }
+    .mini-player-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #b06bff, #ff5ec4);
+        transition: width 0.15s linear;
+    }
+
+    .mini-player-art-wrap {
+        position: relative;
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .mini-player-expand {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+    }
+    .mini-player-expand:active { opacity: 0.85; }
+    .mini-player-art {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .mini-player-art-fallback {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.2rem;
+    }
+
+    .mini-player-info {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+    }
+    .mini-player-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-main, #fff);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .mini-player-sub {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.65);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mini-player-actions {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .mini-player-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-main, #fff);
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .mini-player-btn:active { transform: scale(0.92); }
+    .mini-rate-btn { color: #ffd34d; }
+    .mini-play-btn {
+        background: linear-gradient(135deg, #b06bff, #ff5ec4);
+        border-color: transparent;
+        font-size: 1.05rem;
+    }
+
+    @keyframes miniPlayerSlideUp {
+        from { transform: translateY(110%); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* When mini-player visible, reserve space so the last card isn't covered.
+       Padding lives on the inner grid so the panel backdrop still extends
+       behind the mini-player area (no empty page gap). */
+    body.has-current-song .songs-grid { padding-bottom: 88px; }
+
+    /* Sheet chrome */
+    .mobile-sheet-handle {
+        display: block;
+        width: 44px;
+        height: 4px;
+        margin: 0 auto 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+    }
+    .mobile-sheet-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(0, 0, 0, 0.5);
+        color: var(--text-main);
+        font-size: 1rem;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    /* Backdrop visible when sheet open */
+    body.mobile-sheet-open .mobile-sheet-backdrop {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Allow body to scroll the list when sheet open; sheet has its own scroll */
+    body.mobile-sheet-open { overflow: hidden; }
+
+    /* Top bar layout */
+    .top-bar {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+    }
+    .brand-inline { min-width: 0; flex: 1; }
+    .brand-inline h1 { font-size: 1.2rem; line-height: 1.1; }
+    .brand-inline p { font-size: 0.72rem; opacity: 0.7; margin: 2px 0 0; }
+
+    /* Top-bar-right becomes a slide-down drawer */
+    .top-bar-right {
+        grid-column: 1 / -1;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    body.mobile-menu-open .top-bar-right { display: flex; }
+
+    .top-bar-right .control-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+    }
+    .top-bar-right .control-btns button {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0 12px;
+        flex: 1;
+        font-size: 1rem;
+    }
+
+    .user-pill { width: 100%; justify-content: center; min-height: 44px; }
+    .filter-chip { min-height: 36px; padding: 8px 14px; font-size: 0.85rem; }
+
+    /* Mobile sort row spans full width */
+    .mobile-sort { grid-column: 1 / -1; }
+
+    /* Song card → clean 2-row Spotify-style layout
+       Row 1: title  |  action cluster (play, share)
+       Row 2: rating · listens · date (inline)  |  (spans nothing)
+    */
+    .song-card {
+        grid-template-columns: 1fr auto !important;
+        grid-template-rows: auto auto;
+        column-gap: 12px;
+        row-gap: 4px;
+        padding: 10px 14px;
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+    }
+    .song-card .card-title-row {
+        grid-column: 1;
+        grid-row: 1;
+        padding-left: 0;
+    }
+    .song-card .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .song-card .artist {
+        display: none;
+    }
+    /* Flatten the meta row into a single inline strip on row 2 */
+    .song-card .card-meta-row {
+        display: flex !important;
+        flex-flow: row wrap;
+        align-items: center;
+        gap: 4px 10px;
+        grid-column: 1;
+        grid-row: 2;
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.6);
+        min-width: 0;
+    }
+    .song-card .date-added,
+    .song-card .listen-count,
+    .song-card .summary-rating,
+    .song-card .comment-count {
+        font-size: inherit;
+        color: inherit;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+    }
+    /* Compact star summary — hide “Avg X.X”, count, user-rating; keep stars */
+    .song-card .summary-rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0;
+    }
+    .song-card .summary-rating .avg-rating,
+    .song-card .summary-rating .rating-count,
+    .song-card .summary-rating .summary-user-rating { display: none; }
+    .song-card .summary-rating .summary-stars { font-size: 0.85rem; letter-spacing: 1px; }
+    /* Comment count gets a divider dot for visual rhythm */
+    .song-card .card-meta-row > * + *::before {
+        content: '·\00a0';
+        opacity: 0.5;
+        margin-right: 2px;
+    }
+
+    /* Action cluster on the right — vertically centered across both rows */
+    .song-card .version-action-row {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-self: center;
+        justify-self: end;
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        width: auto;
+        flex-flow: row nowrap;
+    }
+    .song-card .play-button-wrap {
+        position: static;
+        justify-self: end;
+        align-self: center;
+        margin: 0;
+    }
+    .song-card .play-button {
+        min-width: 40px;
+        min-height: 40px;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* Strip the "Play V1" text label on mobile, keep just the glyph */
+        font-size: 0;
+    }
+    .song-card .play-button::before {
+        content: '▶';
+        font-size: 1rem;
+        line-height: 1;
+        margin-left: 2px;
+    }
+    .song-card .play-button.playing::before { content: '⏸'; margin-left: 0; }
+    .song-card .share-button { display: none; }
+
+    /* Selected/now-playing highlight stays subtle on mobile */
+    .song-card.panel-selected,
+    .song-card.in-now-playing { border-radius: 12px; }
+
+    /* Bigger tap targets */
+    .play-button { min-width: 44px; min-height: 44px; padding: 10px 14px; }
+    .share-button { min-height: 40px; padding: 10px 14px; font-size: 0.9rem; }
+    .version-tab { min-height: 40px; padding: 8px 16px; font-size: 0.9rem; }
+
+    /* Make version tabs horizontally scrollable instead of wrapping */
+    .version-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        gap: 8px;
+        padding-bottom: 4px;
+    }
+    .version-tab { scroll-snap-align: start; flex-shrink: 0; }
+
+    /* Keep the player bar visible above the bottom sheet */
+    .player-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 6;
+    }
+}
+
+/* ---------- ≤ 600px (phones, portrait) ---------- */
+@media (max-width: 600px) {
+    .app-shell { padding: 12px; }
+    .main-content { padding: 14px 12px; }
+    .list-player-panel { border-radius: 18px; }
+
+    .brand-inline h1 { font-size: 1.1rem; }
+    .brand-inline p { display: none; }
+
+    .search-bar { width: 100%; padding: 10px 14px; font-size: 0.95rem; }
+
+    .filter-chip { font-size: 0.8rem; padding: 8px 12px; min-height: 36px; }
+
+    .songs-grid { padding: 8px; }
+
+    .song-card { padding: 10px 12px; min-height: 60px; }
+    .song-card .card-title { font-size: 0.95rem; }
+
+    /* Rating popup tightens up */
+    .rating-popup-modal { padding: 28px 22px; width: calc(100vw - 32px); max-width: 420px; }
+    .rating-popup-modal h2 { font-size: 1.4rem; }
+    .popup-star { font-size: 2.6rem; }
+    .rating-popup-stars { gap: 8px; }
+
+    .comment-popup-modal { padding: 24px 20px; width: calc(100vw - 32px); }
+    .comment-popup-textarea { min-height: 120px; font-size: 1rem; }
+    .comment-popup-actions { flex-wrap: wrap; gap: 8px; }
+    .comment-popup-actions > * { flex: 1 1 100%; min-height: 44px; }
+
+    /* Bottom sheet uses more screen */
+    .now-playing-side-panel { max-height: 92dvh; padding: 22px 14px 28px; }
+    .now-playing-side-panel .song-card-panel { padding: 18px 14px; }
+    .now-playing-side-panel .album-art-wrap,
+    .now-playing-side-panel .art-wrap { max-height: 240px; }
+}
+
+/* ---------- ≤ 480px (small phones) ---------- */
+@media (max-width: 480px) {
+    .app-shell { padding: 8px; }
+    .main-content { padding: 10px 8px; }
+
+    .top-bar { gap: 8px; }
+    .brand-inline h1 { font-size: 1rem; }
+
+    .mobile-menu-toggle { width: 40px; height: 40px; font-size: 1.2rem; }
+
+    .filter-chip { font-size: 0.78rem; padding: 7px 10px; }
+
+    .songs-grid { padding: 6px; }
+    .song-card { padding: 9px 10px; }
+
+    .rating-popup-modal { padding: 22px 18px; }
+    .popup-star { font-size: 2.4rem; }
+
+    .now-playing-side-panel { padding: 20px 10px 24px; max-height: 94dvh; }
+}
+
+/* ---------- ≤ 360px (tiny phones) ---------- */
+@media (max-width: 360px) {
+    .brand-inline h1 { font-size: 0.95rem; }
+    .filter-chip { padding: 6px 9px; font-size: 0.74rem; }
+    .popup-star { font-size: 2.1rem; }
+    .rating-popup-stars { gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .comment-popup-actions > * { font-size: 0.95rem; }
+    .top-bar-right .control-btns button { flex-basis: calc(50% - 4px); }
+}
+
+/* ---------- Landscape on short viewports ---------- */
+@media (max-height: 600px) and (max-width: 900px) {
+    .now-playing-side-panel { max-height: 100dvh; padding-top: 14px; }
+    .now-playing-side-panel .album-art-wrap,
+    .now-playing-side-panel .art-wrap { max-height: 40vh; }
+    .songs-grid { /* natural height on landscape mobile too */ }
+    .brand-inline p { display: none; }
 }

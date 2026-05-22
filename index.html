@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>StellarVail - Music Sharing</title>
     <meta name="description" content="Listen to original tracks on Stellar Vail. Explore songs, versions, ratings, and comments.">
     <meta property="og:type" content="website">
@@ -28,6 +28,7 @@
         <div class="content-column">
             <main class="main-content">
                 <header class="top-bar">
+                    <button id="mobile-menu-toggle" class="mobile-menu-toggle mobile-only" type="button" aria-label="Open menu" aria-expanded="false" onclick="toggleMobileMenu()">☰</button>
                     <div class="brand-inline">
                         <h1>Stellar Vail</h1>
                         <p>Journey Through Sound</p>
@@ -38,6 +39,16 @@
                         <button id="sort-date-btn" class="sort-btn active" onclick="setSortMode('date')">📅 Newest</button>
                         <button id="sort-listens-btn" class="sort-btn" onclick="setSortMode('listens')">🎧 Most Played</button>
                     </div>
+                    <label class="mobile-sort mobile-only" for="mobile-sort-select">
+                        <span class="mobile-sort-label">Sort</span>
+                        <select id="mobile-sort-select" class="mobile-sort-select" onchange="setSortMode(this.value)">
+                            <option value="date">📅 Newest</option>
+                            <option value="rating">⭐ Rating</option>
+                            <option value="listens">🎧 Most Played</option>
+                            <option value="comments">💬 Comments</option>
+                            <option value="title">🔤 Title</option>
+                        </select>
+                    </label>
                     <div class="top-bar-right">
                         <button id="admin-mode-btn" class="filter-chip admin-mode-switch" type="button" onclick="openAdminMode()" hidden>Analytics</button>
                         <button id="filter-unrated-btn" class="filter-chip" onclick="toggleUnratedFilter()" title="Show only songs you haven't rated yet">Unrated only</button>
@@ -71,7 +82,6 @@
                             <!-- Songs will be dynamically loaded here -->
                         </section>
                     </div>
-
                 </div>
                 <canvas id="aurora-canvas" class="aurora-canvas"></canvas>
                 <footer class="player-bar">
@@ -80,7 +90,32 @@
             </div>
         </div>
 
+        <!-- Mobile sheet backdrop -->
+        <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" onclick="closeMobileSheet()" aria-hidden="true"></div>
+
+        <!-- Mobile mini player (Spotify-style bottom bar) -->
+        <div class="mobile-mini-player mobile-only" id="mobile-mini-player">
+            <div class="mini-player-progress" aria-hidden="true"><div class="mini-player-progress-bar" id="mini-player-progress-bar"></div></div>
+            <button type="button" class="mini-player-expand" aria-label="Open now playing" onclick="openMobileSheet()">
+                <div class="mini-player-art-wrap">
+                    <img class="mini-player-art" id="mini-player-art" alt="">
+                    <div class="mini-player-art-fallback" id="mini-player-art-fallback">♪</div>
+                </div>
+                <div class="mini-player-info">
+                    <div class="mini-player-title" id="mini-player-title">Nothing playing</div>
+                    <div class="mini-player-sub" id="mini-player-sub">Tap a song to start</div>
+                </div>
+            </button>
+            <div class="mini-player-actions">
+                <button type="button" class="mini-player-btn mini-rate-btn" id="mini-rate-btn" aria-label="Rate this song" onclick="openMobileRate()">★</button>
+                <button type="button" class="mini-player-btn mini-comment-btn" id="mini-comment-btn" aria-label="Comment" onclick="openMobileComment()">💬</button>
+                <button type="button" class="mini-player-btn mini-play-btn" id="mini-play-btn" aria-label="Play/Pause" onclick="toggleMiniPlayPause()">▶</button>
+            </div>
+        </div>
+
         <div class="now-playing-side-panel" id="now-playing-side-panel">
+            <button type="button" class="mobile-sheet-close mobile-only" id="mobile-sheet-close" aria-label="Close now playing" onclick="closeMobileSheet()">✕</button>
+            <div class="mobile-sheet-handle mobile-only" aria-hidden="true"></div>
             <!-- Populated by JS when a song plays -->
         </div>
     </div>
