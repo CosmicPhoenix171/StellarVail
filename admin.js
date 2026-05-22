@@ -63,6 +63,16 @@ function formatTime(seconds) {
 	return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
+function formatDurationSummary(seconds) {
+	const totalSeconds = Math.max(0, Math.round(seconds || 0));
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const remainingSeconds = totalSeconds % 60;
+	if (hours > 0) return `${hours}h ${minutes}m`;
+	if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+	return `${remainingSeconds}s`;
+}
+
 function formatDateTime(timestamp) {
 	if (!timestamp) return '-';
 	return new Date(timestamp).toLocaleString();
@@ -120,6 +130,16 @@ function escapeHtml(value) {
 		.replace(/'/g, '&#039;');
 }
 
+function loadAudioDuration(src) {
+	return new Promise((resolve) => {
+		const audio = new Audio();
+		audio.preload = 'metadata';
+		audio.addEventListener('loadedmetadata', () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0), { once: true });
+		audio.addEventListener('error', () => resolve(0), { once: true });
+		audio.src = src;
+	});
+}
+
 async function loadSongsForAdmin() {
 	const indexResponse = await fetch(`${basePath}music/index.json`);
 	const folders = await indexResponse.json();
@@ -136,13 +156,18 @@ async function loadSongsForAdmin() {
 			// Firebase paths and show zero analytics for every mp3-backed song.
 			const baseName = filename.replace(/\.wav$/i, '');
 			const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
+			const versions = info.versions || null;
+			const versionEntries = versions?.length ? versions : [{ filename: info.filename, label: 'Original' }];
+			const versionDurations = await Promise.all(versionEntries.map((version) => loadAudioDuration(`${basePath}music/${folder}/${version.filename}`)));
 			return {
 				id: info.id || legacyIdMap[filename] || safeId,
 				title: info.title || baseName,
 				filename,
 				folder,
 				dateAdded: info.dateAdded || today,
-				versions: info.versions || null
+				versions,
+				baseDurationSeconds: versionDurations[0] || 0,
+				versionDurationSeconds: versionDurations
 			};
 		} catch (error) {
 			console.warn(`Could not load admin info for ${folder}:`, error);
@@ -191,6 +216,7 @@ async function loadVersionAnalytics(song, versionIndex) {
 		songVersionId,
 		versionLabel: versionLabel(song, versionIndex),
 		versionFilename: song.versions?.[versionIndex]?.filename || song.filename,
+		durationSeconds: Number(song.versionDurationSeconds?.[versionIndex] || song.baseDurationSeconds || 0),
 		ratingAverage: ratingStats.average,
 		ratingCount: ratingStats.count,
 		commentCount: Object.keys(firebaseSong.feedback || {}).length,
@@ -227,6 +253,14 @@ function selectAdminVersion(songId, versionIndex) {
 
 function renderSummary(rows) {
 	const summaryElement = document.getElementById('admin-summary');
+	const songMap = new Map();
+	rows.forEach((row) => {
+		if (!songMap.has(row.song.id)) songMap.set(row.song.id, row.song);
+	});
+	const totalSongs = songMap.size;
+	const totalVersions = rows.length;
+	const totalSongDuration = Array.from(songMap.values()).reduce((sum, song) => sum + Number(song.baseDurationSeconds || 0), 0);
+	const totalVersionDuration = rows.reduce((sum, row) => sum + Number(row.durationSeconds || 0), 0);
 	const totalSessions = rows.reduce((sum, row) => sum + row.sessionCount, 0);
 	const totalCredited = rows.reduce((sum, row) => sum + row.creditedListenCount, 0);
 	const totalCompleted = rows.reduce((sum, row) => sum + row.completedCount, 0);
@@ -235,7 +269,10 @@ function renderSummary(rows) {
 	const totalComments = rows.reduce((sum, row) => sum + row.commentCount, 0);
 
 	summaryElement.innerHTML = [
-		renderMetric('Songs / versions', rows.length),
+		renderMetric('Songs', formatNumber(totalSongs)),
+		renderMetric('Versions', formatNumber(totalVersions)),
+		renderMetric('All songs time', formatDurationSummary(totalSongDuration)),
+		renderMetric('Songs + versions time', formatDurationSummary(totalVersionDuration)),
 		renderMetric('Sessions', formatNumber(totalSessions)),
 		renderMetric('Credited listens', formatNumber(totalCredited)),
 		renderMetric('Finished listens', formatNumber(totalCompleted)),
