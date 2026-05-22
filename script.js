@@ -93,7 +93,6 @@ function buildVersionShareSlug(song, versionIndex) {
 function buildTrackShareUrl(songBaseId, versionIndex) {
 	const song = songsData.find((entry) => entry.id === songBaseId);
 	if (!song) return '';
-	const sharePath = buildSongSharePath(song);
 	const versionSlug = buildVersionShareSlug(song, versionIndex);
 	const baseUrl = new URL(window.location.href);
 	baseUrl.search = '';
@@ -101,7 +100,7 @@ function buildTrackShareUrl(songBaseId, versionIndex) {
 	const appRoot = /\.[a-z0-9]+$/i.test(baseUrl.pathname)
 		? baseUrl.pathname.replace(/[^/]+$/, '')
 		: (baseUrl.pathname.endsWith('/') ? baseUrl.pathname : `${baseUrl.pathname}/`);
-	const url = new URL(`share/${encodeURIComponent(sharePath)}/`, `${baseUrl.origin}${appRoot}`);
+	const url = new URL(`music/${encodeURIComponent(song.folder)}/`, `${baseUrl.origin}${appRoot}`);
 	if (versionSlug) {
 		url.searchParams.set('v', versionSlug);
 	}

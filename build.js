@@ -12,7 +12,6 @@ const path = require('path');
 
 const publicSiteUrl = 'https://cosmicphoenix171.github.io/StellarVail';
 const musicDir = path.join(__dirname, 'music');
-const shareDir = path.join(__dirname, 'share');
 const indexFile = path.join(musicDir, 'index.json');
 
 const shareDescriptionsByFolder = {
@@ -233,8 +232,8 @@ function buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shar
 }
 
 function generateSharePages(songs) {
-	fs.rmSync(shareDir, { recursive: true, force: true });
-	fs.mkdirSync(shareDir, { recursive: true });
+	const legacyShareDir = path.join(__dirname, 'share');
+	fs.rmSync(legacyShareDir, { recursive: true, force: true });
 
 	let pageCount = 0;
 
@@ -242,14 +241,14 @@ function generateSharePages(songs) {
 		const versions = song.versions?.length ? song.versions : [{ filename: song.filename, label: 'Original' }];
 		const hasMultipleVersions = versions.length > 1;
 		const defaultTrackId = versionId(song, 0);
-		const sharePath = buildSongSharePath(song);
 		const trackTitle = buildTrackTitle(song, versions[0], hasMultipleVersions);
 		const cardTitle = buildShareCardTitle(song);
 		const description = buildTrackDescription(song, trackTitle);
 		const imageUrl = resolveImageUrl(song);
-		const shareUrl = `${publicSiteUrl}/share/${encodeURIComponent(sharePath)}/`;
+		const encodedFolder = encodeURIComponent(song.folder);
+		const shareUrl = `${publicSiteUrl}/music/${encodedFolder}/`;
 		const redirectUrl = `../../?track=${encodeURIComponent(defaultTrackId)}`;
-		const targetDir = path.join(shareDir, sharePath);
+		const targetDir = path.join(musicDir, song.folder);
 		const versionTargets = {};
 
 		versions.forEach((version, versionIndex) => {
@@ -258,7 +257,6 @@ function generateSharePages(songs) {
 			versionTargets[versionSlug] = versionId(song, versionIndex);
 		});
 
-		fs.mkdirSync(targetDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(targetDir, 'index.html'),
 			buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shareUrl, redirectUrl, defaultTrackId, versionTargets }),
