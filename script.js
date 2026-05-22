@@ -783,6 +783,8 @@ function selectVersion(songBaseId, index) {
 		if (panel) panel.classList.toggle('active', i === index);
 	});
 
+	refreshArtListenCount(songBaseId);
+
 	selectSong(songBaseId, { scroll: false });
 
 	// If any version of this song is currently playing, switch audio to the selected version
@@ -1105,11 +1107,25 @@ function toggleLoopSong() {
 
 function ensureSongStatsEntry(songId) {
 	if (!songStats[songId]) {
-		songStats[songId] = { rating: 0, listens: 0, versionRatings: {} };
+		songStats[songId] = { rating: 0, listens: 0, versionRatings: {}, versionListens: {} };
 	} else if (!songStats[songId].versionRatings) {
 		songStats[songId].versionRatings = {};
 	}
+	if (!songStats[songId].versionListens) {
+		songStats[songId].versionListens = {};
+	}
 	return songStats[songId];
+}
+
+function refreshArtListenCount(songBaseId) {
+	const song = songsData.find((entry) => entry.id === songBaseId);
+	const artListenEl = document.getElementById(`art-listen-${songBaseId}`);
+	if (!song || !artListenEl) return;
+	const statsEntry = ensureSongStatsEntry(songBaseId);
+	const selectedIndex = selectedVersions[songBaseId] ?? defaultVersionIndex(song);
+	const selectedVersionId = versionId(song, selectedIndex);
+	const count = Number(statsEntry.versionListens[selectedVersionId] || 0);
+	artListenEl.textContent = `${count} version listen${count === 1 ? '' : 's'}`;
 }
 
 function roundAnalyticsValue(value, digits = 2) {
@@ -1199,6 +1215,47 @@ function updatePlaybackAnalyticsSnapshot() {
 	playbackAnalytics.listenInvalidated = listenInvalidated;
 	playbackAnalytics.completed = duration > 0 && playbackAnalytics.maxPositionSeconds >= duration * 0.98;
 	return playbackAnalytics;
+}
+
+function refreshArtRatingChip(songBaseId) {
+	const song = songsData.find((entry) => entry.id === songBaseId);
+	const artRatingEl = document.getElementById(`art-rating-${songBaseId}`);
+	if (!song || !artRatingEl) return;
+
+	const hasMultipleVersions = Array.isArray(song.versions) && song.versions.length > 1;
+	if (!hasMultipleVersions) {
+		artRatingEl.style.display = 'none';
+		return;
+	}
+
+	const statsEntry = ensureSongStatsEntry(songBaseId);
+	const bestAverage = Math.max(0, ...Object.values(statsEntry.versionRatings || {}));
+	if (bestAverage <= 0) {
+		artRatingEl.style.display = 'none';
+		return;
+	}
+
+	const filledStars = Math.max(1, Math.round(bestAverage));
+	artRatingEl.textContent = `${'★'.repeat(filledStars)}${'☆'.repeat(5 - filledStars)}`;
+	artRatingEl.title = `Highest rated version: ${bestAverage.toFixed(1)} stars`;
+	artRatingEl.style.display = '';
+}
+
+function refreshBestVersionSummaryStars(songBaseId) {
+	const song = songsData.find((entry) => entry.id === songBaseId);
+	if (!song?.versions?.length || song.versions.length <= 1) return;
+
+	const statsEntry = ensureSongStatsEntry(songBaseId);
+	const bestAverage = Math.max(0, ...Object.values(statsEntry.versionRatings || {}));
+	const filledStars = Math.round(bestAverage);
+
+	song.versions.forEach((_, versionIndex) => {
+		const summaryStars = document.getElementById(`summary-stars-${versionId(song, versionIndex)}`);
+		if (!summaryStars) return;
+		summaryStars.querySelectorAll('.summary-star').forEach((star, index) => {
+			star.classList.toggle('version-best', filledStars > 0 && index < filledStars);
+		});
+	});
 }
 
 function savePlaybackAnalytics(reason = 'progress', finalize = false) {
@@ -1394,10 +1451,6 @@ function loadListenCount(songId) {
 	const listensRef = database.ref(`songs/${songId}/listens`);
 	listensRef.on('value', (snapshot) => {
 		const count = snapshot.val() || 0;
-		const listenElement = document.getElementById(`listen-count-${songId}`);
-		if (listenElement) {
-			listenElement.textContent = `${count} listen${count === 1 ? '' : 's'}`;
-		}
 		// Track for sorting
 		// Aggregate listens under the base song ID for sorting
 		const baseSong = songsData.find(s =>
@@ -1405,13 +1458,23 @@ function loadListenCount(songId) {
 		);
 		const statKey = baseSong ? baseSong.id : songId;
 		const statsEntry = ensureSongStatsEntry(statKey);
-		statsEntry.listens = (statsEntry.listens || 0) + count;
-		// Update art overlay listen count with running total
-		const artListenEl = document.getElementById(`art-listen-${statKey}`);
-		if (artListenEl) {
-			const total = statsEntry.listens;
-			artListenEl.textContent = `${total} listen${total === 1 ? '' : 's'}`;
+		statsEntry.versionListens[songId] = count;
+		statsEntry.listens = Object.values(statsEntry.versionListens).reduce((sum, value) => sum + Number(value || 0), 0);
+		const total = statsEntry.listens;
+		if (baseSong?.versions?.length) {
+			baseSong.versions.forEach((_, versionIndex) => {
+				const versionListenEl = document.getElementById(`listen-count-${versionId(baseSong, versionIndex)}`);
+				if (versionListenEl) {
+					versionListenEl.textContent = `${total} total listen${total === 1 ? '' : 's'}`;
+				}
+			});
+		} else {
+			const listenElement = document.getElementById(`listen-count-${songId}`);
+			if (listenElement) {
+				listenElement.textContent = `${total} total listen${total === 1 ? '' : 's'}`;
+			}
 		}
+		refreshArtListenCount(statKey);
 		debouncedSortSongs();
 	});
 }
@@ -1575,17 +1638,6 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		}
 		if (countElement) countElement.textContent = `(${count} rating${count === 1 ? '' : 's'}${isAdminMode ? pendingHint : ''})`;
 
-		// Sync art overlay rating chip (base song, first version only)
-		const artRatingEl = document.getElementById(`art-rating-${songBaseId}`);
-		if (artRatingEl && versionIndex === 0) {
-			if (hasVisibleCommunityRating) {
-				artRatingEl.textContent = `★ ${average}`;
-				artRatingEl.style.display = '';
-			} else {
-				artRatingEl.style.display = 'none';
-			}
-		}
-
 		updateStarsDisplay(songId, parseFloat(average));
 
 		// Admin mode: show individual user ratings
@@ -1624,6 +1676,8 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		const statsEntry = ensureSongStatsEntry(statKey);
 		statsEntry.versionRatings[songId] = hasVisibleCommunityRating ? parseFloat(average) : 0;
 		statsEntry.rating = Math.max(0, ...Object.values(statsEntry.versionRatings));
+		refreshArtRatingChip(statKey);
+		refreshBestVersionSummaryStars(statKey);
 		debouncedSortSongs();
 	});
 }

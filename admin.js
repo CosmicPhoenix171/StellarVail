@@ -245,12 +245,13 @@ function renderSummary(rows) {
 	].join('');
 }
 
-function renderVersionPanel(row, activeVersionIndex) {
+function renderVersionPanel(row, activeVersionIndex, songTotalPublicListens) {
 	const dropOffEntries = topEntries(row.dropOffBuckets, 4);
 	const replayEntries = topEntries(row.replayHotspots, 3);
 	const conversionEntries = topEntries(row.conversionCounts, 3);
 	const topListenerEntries = topListeners(row.byUser, 3);
 	const ratingText = row.ratingCount ? `${formatNumber(row.ratingAverage, 1)} (${row.ratingCount})` : '-.-';
+	const listenShare = songTotalPublicListens > 0 ? (row.publicListens / songTotalPublicListens) * 100 : 0;
  	const isActive = row.versionIndex === activeVersionIndex;
 
 	return `
@@ -271,7 +272,8 @@ function renderVersionPanel(row, activeVersionIndex) {
 			</div>
 			<div class="admin-card-metrics">
 				${renderMetric('Rating', ratingText)}
-				${renderMetric('Public listens', formatNumber(row.publicListens))}
+				${renderMetric('Version listens', formatNumber(row.publicListens))}
+				${renderMetric('Share of song listens', formatPercent(listenShare))}
 				${renderMetric('Sessions', formatNumber(row.sessionCount))}
 				${renderMetric('Credited', formatNumber(row.creditedListenCount))}
 				${renderMetric('Completed', formatNumber(row.completedCount))}
@@ -295,15 +297,16 @@ function renderVersionPanel(row, activeVersionIndex) {
 
 function renderSongGroup(song, rows) {
 	const sortedRows = [...rows].sort((first, second) => first.versionIndex - second.versionIndex);
-	const activeVersionIndex = selectedAdminVersions[song.id] ?? defaultVersionIndex(song);
-	const activeRow = sortedRows.find((row) => row.versionIndex === activeVersionIndex) || sortedRows[0];
-	selectedAdminVersions[song.id] = activeRow.versionIndex;
 	const totalSessions = sortedRows.reduce((sum, row) => sum + row.sessionCount, 0);
 	const totalPublicListens = sortedRows.reduce((sum, row) => sum + row.publicListens, 0);
 	const totalRatings = sortedRows.reduce((sum, row) => sum + row.ratingCount, 0);
+	const topVersionRow = [...sortedRows].sort((first, second) => second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || first.versionIndex - second.versionIndex)[0] || sortedRows[0];
+	const activeVersionIndex = selectedAdminVersions[song.id] ?? topVersionRow?.versionIndex ?? defaultVersionIndex(song);
+	const activeRow = sortedRows.find((row) => row.versionIndex === activeVersionIndex) || sortedRows[0];
+	selectedAdminVersions[song.id] = activeRow.versionIndex;
 	const versionTabs = sortedRows.map((row) => `
 		<button class="admin-version-tab${row.versionIndex === activeRow.versionIndex ? ' active' : ''}" type="button" data-song-id="${escapeHtml(song.id)}" data-version-index="${row.versionIndex}">
-			${escapeHtml(row.versionLabel)}
+			${escapeHtml(row.versionLabel)} · ${formatNumber(row.publicListens)}
 		</button>
 	`).join('');
 
@@ -312,14 +315,14 @@ function renderSongGroup(song, rows) {
 			<div class="admin-song-card-head">
 				<div>
 					<h3>${escapeHtml(song.title)}</h3>
-					<p>${sortedRows.length} version${sortedRows.length === 1 ? '' : 's'} - ${formatNumber(totalPublicListens)} public listens - ${formatNumber(totalSessions)} sessions - ${formatNumber(totalRatings)} ratings</p>
+					<p>${sortedRows.length} version${sortedRows.length === 1 ? '' : 's'} - ${formatNumber(totalPublicListens)} total listens - ${formatNumber(totalSessions)} sessions - ${formatNumber(totalRatings)} ratings</p>
 				</div>
 				<span>${formatDateTime(Math.max(...sortedRows.map((row) => row.lastSessionAt)))}</span>
 			</div>
 			<div class="admin-version-tabs" role="tablist" aria-label="${escapeHtml(song.title)} versions">
 				${versionTabs}
 			</div>
-			${sortedRows.map((row) => renderVersionPanel(row, activeRow.versionIndex)).join('')}
+			${sortedRows.map((row) => renderVersionPanel(row, activeRow.versionIndex, totalPublicListens)).join('')}
 		</article>
 	`;
 }
@@ -335,11 +338,15 @@ function groupRowsBySong(rows) {
 function renderRows(rows) {
 	const songListElement = document.getElementById('admin-song-list');
 	const updatedAtElement = document.getElementById('admin-updated-at');
-	const sortedRows = [...rows].sort((first, second) => second.lastSessionAt - first.lastSessionAt || first.song.title.localeCompare(second.song.title));
+	const sortedRows = [...rows].sort((first, second) => second.publicListens - first.publicListens || second.sessionCount - first.sessionCount || second.lastSessionAt - first.lastSessionAt || first.song.title.localeCompare(second.song.title));
 	const groupedRows = Array.from(groupRowsBySong(sortedRows).values()).sort((first, second) => {
+		const totalListensFirst = first.rows.reduce((sum, row) => sum + row.publicListens, 0);
+		const totalListensSecond = second.rows.reduce((sum, row) => sum + row.publicListens, 0);
+		const totalSessionsFirst = first.rows.reduce((sum, row) => sum + row.sessionCount, 0);
+		const totalSessionsSecond = second.rows.reduce((sum, row) => sum + row.sessionCount, 0);
 		const latestFirst = Math.max(...first.rows.map((row) => row.lastSessionAt));
 		const latestSecond = Math.max(...second.rows.map((row) => row.lastSessionAt));
-		return latestSecond - latestFirst || first.song.title.localeCompare(second.song.title);
+		return totalListensSecond - totalListensFirst || totalSessionsSecond - totalSessionsFirst || latestSecond - latestFirst || first.song.title.localeCompare(second.song.title);
 	});
 	renderSummary(sortedRows);
 	songListElement.innerHTML = groupedRows.map(({ song, rows: songRows }) => renderSongGroup(song, songRows)).join('') || '<p class="admin-empty-state">No songs found.</p>';
