@@ -1,9 +1,6 @@
 ﻿{
-    "filename": "Romance.exe V2.wav",
+    "id": "romanceexe-v2-v3",
+    "filename": "RomanceV3.exe.mp3",
     "title": "Romance.exe",
-    "dateAdded": "January 13, 2026",
-    "versions": [
-        { "filename": "Romance.exe V2.wav",  "label": "V2" },
-        { "filename": "RomanceV3.exe.mp3",   "label": "V3" }
-    ]
+    "dateAdded": "January 13, 2026"
 }
