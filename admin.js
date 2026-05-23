@@ -1,6 +1,7 @@
 const ADMIN_USERNAMES = ['Phoenix'];
 const basePath = '';
 const selectedAdminVersions = {};
+const ADMIN_SONG_CACHE_KEY = 'sv_admin_song_cache_v1';
 
 const legacyIdMap = {
 	'Tik.wav': 'song1',
@@ -130,6 +131,32 @@ function escapeHtml(value) {
 		.replace(/'/g, '&#039;');
 }
 
+function readAdminSongCache() {
+	try {
+		const raw = localStorage.getItem(ADMIN_SONG_CACHE_KEY);
+		if (!raw) return {};
+		const parsed = JSON.parse(raw);
+		return parsed && typeof parsed === 'object' ? parsed : {};
+	} catch {
+		return {};
+	}
+}
+
+function writeAdminSongCache(cache) {
+	try {
+		localStorage.setItem(ADMIN_SONG_CACHE_KEY, JSON.stringify(cache));
+	} catch {
+		// Ignore cache write failures; analytics still works without persistence.
+	}
+}
+
+function buildSongCacheFingerprint(info) {
+	return JSON.stringify({
+		filename: info.filename || '',
+		versions: info.versions || null
+	});
+}
+
 function loadAudioDuration(src) {
 	return new Promise((resolve) => {
 		const audio = new Audio();
@@ -144,6 +171,8 @@ async function loadSongsForAdmin() {
 	const indexResponse = await fetch(`${basePath}music/index.json`);
 	const folders = await indexResponse.json();
 	const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+	const durationCache = readAdminSongCache();
+	let cacheDirty = false;
 
 	const loadedSongs = await Promise.all(folders.map(async (folder) => {
 		try {
@@ -158,7 +187,23 @@ async function loadSongsForAdmin() {
 			const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
 			const versions = info.versions || null;
 			const versionEntries = versions?.length ? versions : [{ filename: info.filename, label: 'Original' }];
-			const versionDurations = await Promise.all(versionEntries.map((version) => loadAudioDuration(`${basePath}music/${folder}/${version.filename}`)));
+			const cacheKey = folder;
+			const fingerprint = buildSongCacheFingerprint(info);
+			const cachedEntry = durationCache[cacheKey];
+			const canUseCachedDurations = cachedEntry
+				&& cachedEntry.fingerprint === fingerprint
+				&& Array.isArray(cachedEntry.versionDurations)
+				&& cachedEntry.versionDurations.length === versionEntries.length;
+			const versionDurations = canUseCachedDurations
+				? cachedEntry.versionDurations.map((value) => Number(value || 0))
+				: await Promise.all(versionEntries.map((version) => loadAudioDuration(`${basePath}music/${folder}/${version.filename}`)));
+			if (!canUseCachedDurations) {
+				durationCache[cacheKey] = {
+					fingerprint,
+					versionDurations
+				};
+				cacheDirty = true;
+			}
 			return {
 				id: info.id || legacyIdMap[filename] || safeId,
 				title: info.title || baseName,
@@ -174,6 +219,8 @@ async function loadSongsForAdmin() {
 			return null;
 		}
 	}));
+
+	if (cacheDirty) writeAdminSongCache(durationCache);
 
 	return loadedSongs.filter(Boolean);
 }
