@@ -1711,7 +1711,7 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		// Track for sorting — aggregate across all versions for card-level sort.
 		// Only community ratings with at least two votes count toward rating sort order.
 		const statsEntry = ensureSongStatsEntry(statKey);
-		statsEntry.userRatedVersions[songId] = currentUserHasRated;
+		statsEntry.userRatedVersions[songId] = isAdminMode || currentUserHasRated;
 		statsEntry.versionRatings[songId] = hasVisibleCommunityRating ? parseFloat(average) : 0;
 		statsEntry.versionSelectionRatings[songId] = count > 0 ? parseFloat(average) : 0;
 		statsEntry.rating = Math.max(0, ...Object.values(statsEntry.versionRatings));
