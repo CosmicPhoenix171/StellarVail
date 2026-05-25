@@ -41,11 +41,44 @@ const heardVersions = new Set(JSON.parse(localStorage.getItem('sv_heard_v') || '
 
 // Tracks selected version index per song card: { [songBaseId]: index }
 const selectedVersions = {};
+const versionSelectionLocked = {};
 const SHARE_TRACK_QUERY_PARAM = 'track';
 
 function defaultVersionIndex(song) {
 	if (!song?.versions?.length) return 0;
-	return song.versions.length - 1;
+	const statsEntry = ensureSongStatsEntry(song.id);
+	for (let index = song.versions.length - 1; index >= 0; index -= 1) {
+		const vid = versionId(song, index);
+		if (!statsEntry.userRatedVersions[vid]) {
+			return index;
+		}
+	}
+
+	let bestIndex = song.versions.length - 1;
+	let bestAverage = Number.NEGATIVE_INFINITY;
+	for (let index = song.versions.length - 1; index >= 0; index -= 1) {
+		const vid = versionId(song, index);
+		const average = Number(statsEntry.versionSelectionRatings[vid] || 0);
+		if (average > bestAverage) {
+			bestAverage = average;
+			bestIndex = index;
+		}
+	}
+
+	return bestIndex;
+}
+
+function syncPreferredVersionSelection(songBaseId) {
+	const song = songsData.find((entry) => entry.id === songBaseId);
+	if (!song?.versions?.length || song.versions.length <= 1 || versionSelectionLocked[songBaseId]) return;
+
+	const preferredIndex = defaultVersionIndex(song);
+	if (selectedVersions[songBaseId] === preferredIndex) return;
+	selectedVersions[songBaseId] = preferredIndex;
+
+	const tabs = document.querySelectorAll(`#version-tabs-${songBaseId} .version-tab`);
+	if (!tabs.length) return;
+	selectVersion(songBaseId, preferredIndex, { auto: true, syncPlayer: false });
 }
 
 // Returns the Firebase ID for a given song + version index
@@ -764,7 +797,9 @@ function createSongCard(song) {
 }
 
 // Switch which version is shown/highlighted on a card
-function selectVersion(songBaseId, index) {
+function selectVersion(songBaseId, index, options = {}) {
+	const { auto = false, syncPlayer = true } = options;
+	if (!auto) versionSelectionLocked[songBaseId] = true;
 	selectedVersions[songBaseId] = index;
 
 	// Update tab active state
@@ -784,9 +819,9 @@ function selectVersion(songBaseId, index) {
 	selectSong(songBaseId, { scroll: false });
 
 	// If any version of this song is currently playing, switch audio to the selected version
-	const isPlayingThisSong = song.versions
+	const isPlayingThisSong = syncPlayer && (song.versions
 		? song.versions.some((_, i) => versionId(song, i) === currentSongId)
-		: currentSongId === song.id;
+		: currentSongId === song.id);
 	if (isPlayingThisSong) {
 		const nextVersionId = versionId(song, index);
 		if (currentSongId !== nextVersionId) {
@@ -1103,12 +1138,18 @@ function toggleLoopSong() {
 
 function ensureSongStatsEntry(songId) {
 	if (!songStats[songId]) {
-		songStats[songId] = { rating: 0, listens: 0, versionRatings: {}, versionListens: {} };
+		songStats[songId] = { rating: 0, listens: 0, versionRatings: {}, versionSelectionRatings: {}, versionListens: {}, userRatedVersions: {} };
 	} else if (!songStats[songId].versionRatings) {
 		songStats[songId].versionRatings = {};
 	}
+	if (!songStats[songId].versionSelectionRatings) {
+		songStats[songId].versionSelectionRatings = {};
+	}
 	if (!songStats[songId].versionListens) {
 		songStats[songId].versionListens = {};
+	}
+	if (!songStats[songId].userRatedVersions) {
+		songStats[songId].userRatedVersions = {};
 	}
 	return songStats[songId];
 }
@@ -1670,10 +1711,13 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		// Track for sorting — aggregate across all versions for card-level sort.
 		// Only community ratings with at least two votes count toward rating sort order.
 		const statsEntry = ensureSongStatsEntry(statKey);
+		statsEntry.userRatedVersions[songId] = currentUserHasRated;
 		statsEntry.versionRatings[songId] = hasVisibleCommunityRating ? parseFloat(average) : 0;
+		statsEntry.versionSelectionRatings[songId] = count > 0 ? parseFloat(average) : 0;
 		statsEntry.rating = Math.max(0, ...Object.values(statsEntry.versionRatings));
 		refreshArtRatingChip(statKey);
 		refreshBestVersionSummaryStars(statKey);
+		syncPreferredVersionSelection(statKey);
 		debouncedSortSongs();
 	});
 }
