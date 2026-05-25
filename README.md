@@ -5,26 +5,38 @@ A simple anonymous music sharing website where friends can listen to your music,
 ## Setup Instructions
 
 ### 1. Add Your Music Files
-- Place your 15 .wav files in the `music/` folder
-- Name them something simple like `song1.wav`, `song2.wav`, etc.
+- Create a folder for each song inside `music/`
+- Put the audio file and any artwork inside that song folder
 
-### 2. Update songs.json
-- Edit `songs.json` to add metadata for each song
-- Update the `id`, `title`, `artist`, `filename`, and `description` fields
-- Make sure the `filename` matches your actual .wav file names
+Example:
+```text
+music/
+  Tectonic Hum/
+   Tectonic Hum.mp3
+   TH.png
+   info.json
+```
+
+### 2. Add info.json Metadata
+- Add an `info.json` file inside each song folder
+- Set `filename` to the audio file name in that folder
+- Optional fields include `title`, `artist`, `description`, `art`, `versions`, and `dateAdded`
 
 Example:
 ```json
 {
-    "id": "song1",
-    "title": "My Awesome Track",
-    "artist": "Your Name",
-    "filename": "song1.wav",
-    "description": "A chill electronic track"
+   "filename": "Tectonic Hum.mp3",
+   "title": "Tectonic Hum",
+   "dateAdded": "May 25, 2026",
+   "art": "TH.png"
 }
 ```
 
-### 3. Set Up Firebase Realtime Database
+### 3. Rebuild the Generated Catalog
+- Run `node build.js`
+- This regenerates `music/index.json` and the `index.html` share page inside each song folder
+
+### 4. Set Up Firebase Realtime Database
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Create a new project (or use existing)
@@ -61,7 +73,7 @@ Example:
    - Replace the placeholder values with your Firebase config
    - Save the file
 
-### 4. Test Locally
+### 5. Test Locally
 
 Open `index.html` in your browser to test:
 - You can open it directly, or use a local server:
@@ -74,7 +86,7 @@ Open `index.html` in your browser to test:
   ```
 - Go to `http://localhost:8000`
 
-### 5. Deploy to GitHub Pages
+### 6. Deploy to GitHub Pages
 
 1. Commit all your files:
    ```bash
@@ -90,7 +102,7 @@ Open `index.html` in your browser to test:
    - Click "Save"
    - Your site will be available at: `https://CosmicPhoenix171.github.io/StellarVail/`
 
-### 6. Share with Friends
+### 7. Share with Friends
 
 Send your friends the GitHub Pages URL and they can:
 - Listen to all your songs

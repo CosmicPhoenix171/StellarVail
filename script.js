@@ -553,7 +553,7 @@ async function loadSongs() {
 					const infoRes = await fetch(`${basePath}music/${folder}/info.json`);
 					const info = await infoRes.json();
 					const filename = info.filename;
-					const baseName = filename.replace(/\.wav$/i, '');
+					const baseName = filename.replace(/\.[^.]+$/i, '');
 					const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
 					const id = info.id || legacyIdMap[filename] || safeId;
 					return {
@@ -793,7 +793,7 @@ function selectVersion(songBaseId, index) {
 			savePlaybackAnalytics('switch-version', true);
 		}
 		const filename = versionFilename(song, index);
-		const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+		const folder = song.folder || song.filename.replace(/\.[^.]+$/i, '');
 		const wasPaused = audioPlayer.paused;
 		audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 		if (!wasPaused) audioPlayer.play().catch(() => {});
@@ -836,7 +836,7 @@ function loadSongToPlayer(songBaseId, versionIndex) {
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
-	const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+	const folder = song.folder || song.filename.replace(/\.[^.]+$/i, '');
 	const filename = versionFilename(song, vi);
 	audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 
@@ -899,7 +899,7 @@ function playSong(songBaseId, versionIndex) {
 
 	if (playerBar) playerBar.classList.remove('hidden');
 
-	const folder = song.folder || song.filename.replace(/\.wav$/i, '');
+	const folder = song.folder || song.filename.replace(/\.[^.]+$/i, '');
 	const filename = versionFilename(song, vi);
 	audioPlayer.src = `${basePath}music/${folder}/${filename}`;
 	audioPlayer.play().catch(err => console.error('Playback error:', err));

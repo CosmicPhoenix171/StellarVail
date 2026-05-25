@@ -2,7 +2,7 @@
  * build.js — StellarVail
  * Run with: node build.js
  *
- * Regenerates music/index.json and static per-track share pages under share/.
+ * Regenerates music/index.json and static per-track share pages inside each music folder.
  * The share pages expose song-specific Open Graph metadata for Discord and
  * redirect browsers back to the main app with the matching track query.
  */
@@ -83,7 +83,7 @@ function mergeFolderOrder(existing, discovered) {
 
 function buildSongId(info) {
 	const filename = info.filename;
-	const baseName = filename.replace(/\.wav$/i, '');
+	const baseName = filename.replace(/\.[^.]+$/i, '');
 	const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
 	return info.id || legacyIdMap[filename] || safeId;
 }
