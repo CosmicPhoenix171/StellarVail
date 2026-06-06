@@ -586,7 +586,11 @@ async function loadSongs() {
 					const infoRes = await fetch(`${basePath}music/${folder}/info.json`);
 					const info = await infoRes.json();
 					const filename = info.filename;
-					const baseName = filename.replace(/\.[^.]+$/i, '');
+					// IMPORTANT: only strip .wav — mp3/ogg/m4a songs already have their
+					// Firebase data stored under IDs that include the extension fused in
+					// (e.g. "fairytalemp3", "sugar-sweet-v3mp3"). Stripping all audio
+					// extensions would orphan every rating/comment for those songs.
+					const baseName = filename.replace(/\.wav$/i, '');
 					const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
 					const id = info.id || legacyIdMap[filename] || safeId;
 					return {

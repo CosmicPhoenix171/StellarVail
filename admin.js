@@ -181,7 +181,11 @@ async function loadSongsForAdmin() {
 			const infoResponse = await fetch(`${basePath}music/${folder}/info.json`);
 			const info = await infoResponse.json();
 			const filename = info.filename;
-			const baseName = filename.replace(/\.[^.]+$/i, '');
+			// Must match script.js exactly — it only strips .wav, so .mp3/.ogg/.m4a
+			// files keep their extension fused into the ID (e.g. "sugar-sweet-v3mp3").
+			// Stripping all audio extensions here would point admin at non-existent
+			// Firebase paths and show zero analytics for every mp3-backed song.
+			const baseName = filename.replace(/\.wav$/i, '');
 			const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
 			const versions = info.versions || null;
 			const versionEntries = versions?.length ? versions : [{ filename: info.filename, label: 'Original' }];
