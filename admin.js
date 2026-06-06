@@ -21,6 +21,22 @@ const legacyIdMap = {
 	'where.wav': 'song19'
 };
 
+// Explicit alias map for songs whose Firebase data lives under historical
+// IDs that can't be derived from the current filename (file renames, legacy
+// songN keys that no longer match the current filename, etc.). Each entry
+// maps a CANONICAL destination ID to the list of historical source IDs the
+// migration should pull from. Used by getSongVersionSourceIds + "Pull Old
+// Data".
+const aliasIdMap = {
+	// Romance.exe V2 — file renamed to RomanceV3.exe.mp3
+	'romancev3exemp3': ['romanceexe-v2', 'romanceexe-v2-v3'],
+	// Demon in Disguise — legacy "Demons.wav" key, file is now Demon in Disguise V2.mp3
+	'demon-in-disguise-v2mp3': ['song8'],
+	// Hide Away V2 — legacy "Hide Away.wav" key, folder/file is now Hide Away V2.wav
+	'hide-away-v2': ['song13']
+};
+
+
 function isAdminSignedIn() {
 	return ADMIN_USERNAMES.includes(localStorage.getItem('sv_username'));
 }
@@ -35,6 +51,41 @@ function versionId(song, versionIndex) {
 	if (!song.versions || song.versions.length <= 1 || resolvedVersionIndex === 0) return song.id;
 	const label = song.versions[resolvedVersionIndex].label.toLowerCase().replace(/[^a-z0-9]/g, '');
 	return `${song.id}-${label}`;
+}
+
+// Returns every Firebase ID a song+version could have lived under in the past.
+// The canonical ID (versionId) is always first; the rest are historical paths
+// that may still hold ratings, comments, listens, or analytics.
+function getSongVersionSourceIds(song, versionIndex) {
+	const ids = [];
+	const canonical = versionId(song, versionIndex);
+	ids.push(canonical);
+
+	const filename = song.filename || '';
+	const cleanBase = filename.replace(/\.[^.]+$/i, '');
+	const wavBase = filename.replace(/\.wav$/i, '');
+
+	const cleanSafe = cleanBase.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
+	const wavSafe = wavBase.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'"]/g, '');
+
+	const vi = versionIndex ?? defaultVersionIndex(song);
+	const labelSuffix = (song.versions && song.versions.length > 1 && vi !== 0)
+		? `-${song.versions[vi].label.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+		: '';
+
+	[cleanSafe, wavSafe, legacyIdMap[filename]].forEach((base) => {
+		if (!base) return;
+		const candidate = `${base}${labelSuffix}`;
+		if (candidate && !ids.includes(candidate)) ids.push(candidate);
+	});
+
+	// Explicit historical IDs from aliasIdMap (file renames, legacy songN keys)
+	const aliasSources = aliasIdMap[canonical] || [];
+	aliasSources.forEach((sourceId) => {
+		if (sourceId && !ids.includes(sourceId)) ids.push(sourceId);
+	});
+
+	return ids;
 }
 
 function versionLabel(song, versionIndex) {
@@ -484,9 +535,156 @@ function goToNormalMode() {
 	window.location.href = 'index.html';
 }
 
+// ===== ONE-SHOT MIGRATION =====
+// Pulls ratings, comments, listens, and analytics from historical Firebase
+// IDs (the ones produced before/after the extension-stripping bug) into the
+// canonical IDs the app currently uses. Safe to re-run: ratings are merged by
+// newest timestamp, feedback is merged by ID (canonical wins on conflict),
+// listens are summed once per source, and an `_migratedTo` flag prevents
+// double-counting on subsequent runs.
+
+async function mergeRatings(sourceData, canonicalId) {
+	if (!sourceData?.ratings) return 0;
+	let merged = 0;
+	for (const [userId, entry] of Object.entries(sourceData.ratings)) {
+		const canonRef = database.ref(`songs/${canonicalId}/ratings/${userId}`);
+		const canonSnap = await canonRef.once('value');
+		const existing = canonSnap.val();
+		const existingTs = (existing && typeof existing === 'object') ? Number(existing.timestamp || 0) : 0;
+		const sourceTs = (entry && typeof entry === 'object') ? Number(entry.timestamp || 0) : 0;
+		if (!existing || sourceTs > existingTs) {
+			await canonRef.set(entry);
+			merged += 1;
+		}
+	}
+	return merged;
+}
+
+async function mergeFeedback(sourceData, canonicalId) {
+	if (!sourceData?.feedback) return 0;
+	let merged = 0;
+	for (const [feedbackId, entry] of Object.entries(sourceData.feedback)) {
+		const canonRef = database.ref(`songs/${canonicalId}/feedback/${feedbackId}`);
+		const canonSnap = await canonRef.once('value');
+		if (!canonSnap.exists()) {
+			await canonRef.set(entry);
+			merged += 1;
+		}
+	}
+	return merged;
+}
+
+async function mergeListens(sourceData, sourceId, canonicalId) {
+	const sourceListens = Number(sourceData?.listens || 0);
+	if (sourceListens <= 0) return 0;
+	const canonRef = database.ref(`songs/${canonicalId}/listens`);
+	await canonRef.transaction((current) => (current || 0) + sourceListens);
+	return sourceListens;
+}
+
+async function mergeAnalytics(sourceData, canonicalId) {
+	if (!sourceData?.analytics) return false;
+	const canonRef = database.ref(`songs/${canonicalId}/analytics`);
+	const canonSnap = await canonRef.once('value');
+	if (canonSnap.exists()) return false; // do not clobber live analytics
+	await canonRef.set(sourceData.analytics);
+	return true;
+}
+
+async function migrateSourceToCanonical(sourceId, canonicalId) {
+	const snap = await database.ref(`songs/${sourceId}`).once('value');
+	const sourceData = snap.val();
+	if (!sourceData) return null;
+	if (sourceData._migratedTo?.canonicalId === canonicalId) return null; // already done
+
+	const ratingsMerged = await mergeRatings(sourceData, canonicalId);
+	const feedbackMerged = await mergeFeedback(sourceData, canonicalId);
+	const listensMerged = await mergeListens(sourceData, sourceId, canonicalId);
+	const analyticsCopied = await mergeAnalytics(sourceData, canonicalId);
+
+	await database.ref(`songs/${sourceId}/_migratedTo`).set({
+		canonicalId,
+		migratedAt: Date.now()
+	});
+
+	return {
+		sourceId,
+		canonicalId,
+		ratingsMerged,
+		feedbackMerged,
+		listensMerged,
+		analyticsCopied
+	};
+}
+
+async function migrateAlternateData() {
+	if (!isAdminSignedIn()) {
+		alert('Sign in as an admin to run the migration.');
+		return;
+	}
+	const confirmed = confirm(
+		'Pull ratings, comments, listens, and analytics from old Firebase IDs into the current IDs?\n\n'
+		+ 'This writes to the database. Safe to re-run.'
+	);
+	if (!confirmed) return;
+
+	const migrateButton = document.getElementById('admin-migrate-btn');
+	const updatedAtElement = document.getElementById('admin-updated-at');
+	if (migrateButton) {
+		migrateButton.disabled = true;
+		migrateButton.textContent = 'Migrating...';
+	}
+	if (updatedAtElement) updatedAtElement.textContent = 'Migrating old data...';
+
+	try {
+		const songs = await loadSongsForAdmin();
+		const results = [];
+		for (const song of songs) {
+			const versionCount = song.versions ? song.versions.length : 1;
+			for (let versionIndex = 0; versionIndex < versionCount; versionIndex += 1) {
+				const canonical = versionId(song, versionIndex);
+				const sourceIds = getSongVersionSourceIds(song, versionIndex).filter((id) => id !== canonical);
+				for (const sourceId of sourceIds) {
+					const result = await migrateSourceToCanonical(sourceId, canonical);
+					if (result) results.push(result);
+				}
+			}
+		}
+
+		const totals = results.reduce((acc, row) => {
+			acc.ratings += row.ratingsMerged;
+			acc.feedback += row.feedbackMerged;
+			acc.listens += row.listensMerged;
+			acc.analytics += row.analyticsCopied ? 1 : 0;
+			acc.sources += 1;
+			return acc;
+		}, { ratings: 0, feedback: 0, listens: 0, analytics: 0, sources: 0 });
+
+		console.table(results);
+		alert(
+			`Migration complete.\n\n`
+			+ `Old paths merged: ${totals.sources}\n`
+			+ `Ratings pulled: ${totals.ratings}\n`
+			+ `Comments pulled: ${totals.feedback}\n`
+			+ `Listens added: ${totals.listens}\n`
+			+ `Analytics blocks copied: ${totals.analytics}`
+		);
+	} catch (error) {
+		console.error('Migration failed:', error);
+		alert('Migration failed. Check the console for details.');
+	} finally {
+		if (migrateButton) {
+			migrateButton.disabled = false;
+			migrateButton.textContent = 'Pull Old Data';
+		}
+		loadAdminDashboard();
+	}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('normal-mode-btn')?.addEventListener('click', goToNormalMode);
 	document.getElementById('locked-normal-btn')?.addEventListener('click', goToNormalMode);
 	document.getElementById('admin-refresh-btn')?.addEventListener('click', loadAdminDashboard);
+	document.getElementById('admin-migrate-btn')?.addEventListener('click', migrateAlternateData);
 	showAdminState();
 });
