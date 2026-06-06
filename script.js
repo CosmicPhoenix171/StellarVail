@@ -1644,14 +1644,39 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 		let count = 0;
 		let guestCount = 0;
 
+		function normalizeRatingEntry(userId, entry) {
+			if (entry && typeof entry === 'object') {
+				const parsedRating = Number(entry.rating);
+				return {
+					userId,
+					rating: Number.isFinite(parsedRating) ? parsedRating : 0,
+					timestamp: Number(entry.timestamp || 0),
+					displayName: entry.displayName || '',
+					username: entry.username || ''
+				};
+			}
+
+			const parsedRating = Number(entry);
+			return {
+				userId,
+				rating: Number.isFinite(parsedRating) ? parsedRating : 0,
+				timestamp: 0,
+				displayName: '',
+				username: ''
+			};
+		}
+
 		if (ratings) {
-			Object.entries(ratings).forEach(([key, rating]) => {
+			Object.entries(ratings).forEach(([key, entry]) => {
+				const rating = normalizeRatingEntry(key, entry);
 				if (key.startsWith('guest_')) {
 					guestCount++;
 					return; // Skip guests in the score
 				}
-				sum += rating.rating;
-				count += 1;
+				if (rating.rating > 0) {
+					sum += rating.rating;
+					count += 1;
+				}
 			});
 		}
 
@@ -1682,14 +1707,15 @@ function loadRatingData(songId, songBaseId, versionIndex) {
 			const breakdownList = document.getElementById(`ratings-list-${songId}`);
 			if (breakdownList) {
 				const entries = Object.entries(ratings)
-					.map(([id, data]) => ({ userId: id, ...data }))
+					.map(([id, data]) => normalizeRatingEntry(id, data))
+					.filter((entry) => entry.rating > 0)
 					.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
 				if (entries.length === 0) {
 					breakdownList.innerHTML = '<p class="no-ratings-yet">No ratings yet.</p>';
 				} else {
 					breakdownList.innerHTML = entries.map(entry => {
-						const name = formatRaterName(entry.userId);
+						const name = formatRaterName(entry.userId, entry.displayName, entry.username);
 						const isGuestEntry = entry.userId.startsWith('guest_');
 						const guestTag = isGuestEntry ? '<span class="guest-tag">pending</span>' : '';
 						const stars = '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating);
@@ -1856,6 +1882,8 @@ function rateSong(songId, rating) {
 	ratingRef
 		.set({
 			rating,
+			displayName: getDisplayName(),
+			username: localStorage.getItem('sv_username') || null,
 			timestamp: Date.now(),
 		})
 		.then(() => {
@@ -2260,7 +2288,9 @@ function getClientId() {
 }
 
 // Format a Firebase rating key into a readable display name
-function formatRaterName(userId) {
+function formatRaterName(userId, displayName = '', username = '') {
+	if (displayName) return displayName;
+	if (username) return username;
 	if (userId.startsWith('user_')) {
 		return userId.slice(5).replace(/_/g, ' ');
 	}

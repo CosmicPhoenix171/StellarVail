@@ -82,7 +82,12 @@ function formatSessionUser(session) {
 }
 
 function averageRating(ratings) {
-	const ratingValues = Object.values(ratings || {}).map((entry) => Number(entry.rating)).filter(Boolean);
+	const ratingValues = Object.values(ratings || {})
+		.map((entry) => {
+			if (entry && typeof entry === 'object') return Number(entry.rating);
+			return Number(entry);
+		})
+		.filter((rating) => Number.isFinite(rating) && rating > 0);
 	if (!ratingValues.length) return { count: 0, average: 0 };
 	const total = ratingValues.reduce((sum, rating) => sum + rating, 0);
 	return { count: ratingValues.length, average: total / ratingValues.length };
@@ -176,11 +181,7 @@ async function loadSongsForAdmin() {
 			const infoResponse = await fetch(`${basePath}music/${folder}/info.json`);
 			const info = await infoResponse.json();
 			const filename = info.filename;
-			// Must match script.js exactly — it only strips .wav, so .mp3/.ogg/.m4a
-			// files keep their extension fused into the ID (e.g. "sugar-sweet-v3mp3").
-			// Stripping all audio extensions here would point admin at non-existent
-			// Firebase paths and show zero analytics for every mp3-backed song.
-			const baseName = filename.replace(/\.wav$/i, '');
+			const baseName = filename.replace(/\.[^.]+$/i, '');
 			const safeId = baseName.toLowerCase().replace(/\s+/g, '-').replace(/[.#$\[\]'\"]/g, '');
 			const versions = info.versions || null;
 			const versionEntries = versions?.length ? versions : [{ filename: info.filename, label: 'Original' }];
