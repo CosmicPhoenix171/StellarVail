@@ -1,19 +1,27 @@
 /**
  * build.js — StellarVail
- * Run with: node build.js
+ * Run with: node js/build.js (from the project root)
  *
  * Regenerates music/index.json and static per-track share pages inside each music folder.
  * The share pages expose song-specific Open Graph metadata for Discord and
  * redirect browsers back to the main app with the matching track query.
+ *
+ * Node CommonJS tooling — intentionally not converted to ES module since
+ * there is no package.json declaring "type": "module" and this file is
+ * only invoked from the command line, not the browser bundle.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const publicSiteUrl = 'https://cosmicphoenix171.github.io/StellarVail';
-const musicDir = path.join(__dirname, 'music');
+const projectRoot = path.join(__dirname, '..');
+const musicDir = path.join(projectRoot, 'music');
 const indexFile = path.join(musicDir, 'index.json');
 
+// Kept in sync with js/config/constants.js → legacyIdMap. Duplicated here
+// because this Node script can't trivially import from an ES module without
+// a package.json declaring "type": "module".
 const legacyIdMap = {
 	'Tik.wav': 'song1',
 	'before morning rise.wav': 'song2',
@@ -29,7 +37,7 @@ const legacyIdMap = {
 	'Neon Riff.wav': 'song16',
 	'Not enough.wav': 'song17',
 	'Villain.wav': 'song18',
-	'where.wav': 'song19'
+	'where.wav': 'song19',
 };
 
 function escapeHtml(value) {
@@ -108,7 +116,7 @@ function buildSongs(folderNames) {
 			genres: info.genres || [],
 			description: info.description || '',
 			art: info.art || '',
-			versions: info.versions || null
+			versions: info.versions || null,
 		};
 	});
 }
@@ -193,7 +201,7 @@ function buildSharePageHtml({ cardTitle, trackTitle, description, imageUrl, shar
 }
 
 function generateSharePages(songs) {
-	const legacyShareDir = path.join(__dirname, 'share');
+	const legacyShareDir = path.join(projectRoot, 'share');
 	fs.rmSync(legacyShareDir, { recursive: true, force: true });
 
 	let pageCount = 0;
